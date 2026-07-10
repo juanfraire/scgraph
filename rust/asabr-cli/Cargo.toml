@@ -1,0 +1,16 @@
+[package]
+name = "asabr-cli"
+version = "0.1.0"
+edition = "2024"
+
+# Level-0 A-SABR CLI (PLAN.md section 7.1): load a contact plan, route one
+# bundle, print the best route as JSON. Used by scgraph as the deterministic
+# routing oracle for the point-mass correctness anchor and inside the
+# Monte-Carlo loop.
+
+[dependencies]
+a_sabr = { path = "../../../a-sabr/asabr" }
+serde_json = "1.0"
+
+[profile.release]
+opt-level = 3

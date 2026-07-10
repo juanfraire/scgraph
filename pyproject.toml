@@ -1,0 +1,23 @@
+[project]
+name = "scgraph"
+version = "0.1.0"
+description = "Stochastic contact graphs: SLA-aware DTN routing under uncertainty (DONUTS / OJ-COMS paper companion)"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["scgraph*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
