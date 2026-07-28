@@ -177,22 +177,26 @@ def main():
     fig, ax = plt.subplots(figsize=(3.6, 2.6))
     x = [r["contacts"] for r in rows]
     ax.plot(x, [r["t_total_ms"] for r in rows],
-            label="SLA-aware selection (total)", **{"color": COL_SCG,
+            label="total selection", **{"color": COL_SCG,
                                                     "linestyle": "-", "marker": "o"})
     ax.plot(x, [r["t_cand_ms"] for r in rows],
             label="candidate generation", **{"color": "#7b4fa8",
                                              "linestyle": "-.", "marker": "^"})
     ax.plot(x, [r["t_mc_per_route_ms"] for r in rows],
-            label=f"scoring, per route ($M$={M_SCORE})",
+            label="scoring, per route",
             **{"color": COL_BOUND, "linestyle": ":", "marker": "d"})
     ax.plot(x, [r["t_det_ms"] for r in rows],
-            label="deterministic CGR (one search)", **{"color": COL_BASE1,
+            label="deterministic CGR", **{"color": COL_BASE1,
                                                        "linestyle": "--", "marker": "s"})
     ax.set_xscale("log")
     ax.set_yscale("log")
+    # a little headroom below the fastest series so the legend sits in clear
+    # space instead of under the deterministic-CGR curve
+    ax.set_ylim(bottom=2.5e-3)
     ax.set_xlabel("contacts in the plan")
     ax.set_ylabel("wall time [ms]")
-    ax.legend(loc="upper left", fontsize=6)
+    ax.legend(loc="lower right", fontsize=6, borderpad=0.4,
+              labelspacing=0.35, handlelength=1.8)
 
     _style.save(fig, str(ROOT / "figures" / "runtime"))
     print(f"done in {time.time() - t_start:.1f}s -> results/runtime.csv, "

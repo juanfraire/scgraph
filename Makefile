@@ -17,9 +17,13 @@ PYTEST  := .venv/bin/pytest
 
 # In dependency-free order; `reproduce` runs them all.
 EXPERIMENTS := uc1 uc2 uc3 ablation eps placement runtime mc_scaling
+# Figure-only scripts: they draw the scenario rather than measure it, so they
+# write to figures/ but produce no CSV for `verify` to diff.
+SCHEMATICS  := scenario
 
 .PHONY: all install install-repro test anchor reproduce verify update-reference \
-        skeletons clean-figures help $(addprefix run-,$(EXPERIMENTS))
+        skeletons clean-figures help \
+        $(addprefix run-,$(EXPERIMENTS)) $(addprefix run-,$(SCHEMATICS))
 
 help:
 	@sed -n '3,12p' Makefile | sed 's/^# \{0,1\}//'
@@ -78,8 +82,10 @@ run-runtime:                  ## 135 s  route-selection runtime vs plan size
 	$(PY) experiments/run_runtime.py
 run-mc_scaling:               ##   5 s  MC vs convolution cost against M (Sec. V-F)
 	$(PY) experiments/run_mc_scaling.py
+run-scenario:                 ##   1 s  scenario figure: skeleton geometry + passes
+	$(PY) experiments/plot_scenario.py
 
-reproduce: $(addprefix run-,$(EXPERIMENTS))
+reproduce: $(addprefix run-,$(EXPERIMENTS)) $(addprefix run-,$(SCHEMATICS))
 	@echo
 	@echo "all experiments done. figures/ now holds the paper's img/ contents."
 	@echo "run 'make verify' to confirm nothing moved."

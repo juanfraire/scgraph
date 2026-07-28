@@ -130,24 +130,28 @@ def main():
 
     fig, ax = plt.subplots(figsize=(3.6, 2.6))
     x = [r["severity"] for r in rows]
-    ax.plot(x, [r["epidemic"] for r in rows], label="epidemic (unbounded copies)",
+    # Labels carry only what distinguishes the policies; the copy budget they
+    # share (N=2 for every bounded policy) is stated once in the caption. Long
+    # labels used to push the legend across the curves.
+    ax.plot(x, [r["epidemic"] for r in rows], label="epidemic (unbounded)",
             **STYLE["bound"])
     ax.errorbar(x, [r["scg"] for r in rows], yerr=[r["ci_scg"] for r in rows],
-                label="SCG replication ($N$=2, correlation-aware)", capsize=2,
+                label="SCG, correlation-aware", capsize=2,
                 **STYLE["scg"])
     ax.errorbar(x, [r["bern"] for r in rows], yerr=[r["ci_bern"] for r in rows],
-                label=r"Bernoulli TEG ($N$=2, existence-aware, independent)",
+                label="Bernoulli TEG, independent",
                 capsize=2,
                 color="#7b4fa8", linestyle="-.", marker="^")
     ax.errorbar(x, [r["naive"] for r in rows], yerr=[r["ci_naive"] for r in rows],
-                label="naive replication ($N$=2, nominal-fastest)", capsize=2,
+                label="naive, nominal-fastest", capsize=2,
                 **STYLE["base2"])
     ax.errorbar(x, [r["stale"] for r in rows], yerr=[r["ci_stale"] for r in rows],
-                label="stale central plan (1 copy)", capsize=2, **STYLE["base1"])
+                label="stale plan (1 copy)", capsize=2, **STYLE["base1"])
     ax.set_xlabel(r"collapse severity $\rho$ (per-region collapse probability)")
     ax.set_ylabel("delivery ratio by deadline")
     ax.set_ylim(0, 1.02)
-    ax.legend(loc="lower left")
+    ax.legend(loc="lower left", handlelength=1.8, borderaxespad=0.3,
+              labelspacing=0.35)
 
     _style.save(fig, str(ROOT / "figures" / "uc3_h3"))
     print(f"done in {time.time() - t_start:.1f}s -> results/uc3.csv, figures/uc3_h3.pdf")
