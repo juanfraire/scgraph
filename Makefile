@@ -1,4 +1,4 @@
-# scgraph — reproduction entry points for the OJ-COMS paper.
+# scgraph: reproduction entry points for the OJ-COMS paper.
 #
 #   make install     create .venv and install the package (loose bounds)
 #   make install-repro   same, but with the exact pinned versions used for the paper

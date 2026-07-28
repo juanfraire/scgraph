@@ -20,7 +20,7 @@ plan**, so an unmodified deterministic router runs inside the verification loop.
 
 ---
 
-## Stage 0 — the scenario
+## Stage 0: the scenario
 
 `scenarios/uc1_skeleton.yaml` is the input to the Contact Plan Designer: a
 Walker-Delta shell of 12 satellites in 3 planes at 600 km and 53°, an event site
@@ -46,12 +46,12 @@ scripts/generate_skeletons.sh          # needs `cpd` on PATH
 
 ---
 
-## Stage 1 — the orbital skeleton (assumption A1)
+## Stage 1: the orbital skeleton (assumption A1)
 
-The space layer is *computed*, not invented. CPD propagates the constellation,
-computes accesses, resolves interface conflicts, and exports a classical contact
-plan; `scgraph.io.cpd` reads it back as contacts whose every law is a point
-mass. That is assumption A1 expressed in code.
+The space layer is *computed* from orbital mechanics. CPD propagates the
+constellation, computes accesses, resolves interface conflicts, and exports a
+classical contact plan; `scgraph.io.cpd` reads it back as contacts whose every law is a point
+mass, which is assumption A1 expressed in code.
 
 ```python
 from scgraph.io import load_cpd_plan
@@ -79,7 +79,7 @@ Three things to notice:
   site, 102 = gateway, 2xx = the constellation); scgraph indexes densely from
   zero. `sk.index` maps CPD → scgraph and `sk.label` inverts it, so a route can
   always be reported back in the operator's numbering. Use
-  `sk.node(101)` rather than hard-coding an index.
+  `sk.node(101)` instead of hard-coding an index.
 - **OWLT is computed when CPD omits it**, from the reported range: near-Earth
   one-way light time is milliseconds, but it is not zero.
 
@@ -89,7 +89,7 @@ dialect, integer-valued). Pass the directory and it picks whichever it finds.
 
 ---
 
-## Stage 2 — stochastic annotation
+## Stage 2: stochastic annotation
 
 The air and ground layers are *added* on top of the skeleton, and the ensemble
 is annotated with laws. Annotation is deliberately non-invasive: the underlying
@@ -128,8 +128,8 @@ buys nothing, and above it the deadline is so loose every policy wins. Here
 `pass_wait = 823.14` s.
 
 **Where the laws go, and why.** A2 places the law on the start and on the
-**duration**, never on the end directly, so that `T_e = T_s + D` makes A5's
-ordering `T_s ≤ T_e` true by construction rather than a constraint to enforce
+**duration**, never on the end directly. `T_e = T_s + D` then makes A5's
+ordering `T_s ≤ T_e` true by construction, and nothing has to enforce it
 between two marginals. The window shifts rigidly with its start:
 
 ```python
@@ -156,8 +156,8 @@ The other two use cases annotate differently:
 | UC3 | existence + **correlation** via a shared latent state | `scenarios/uc3_emergency.py` |
 
 UC3 carries no orbital layer at all: it is a ground/D2D collapse scenario by
-construction, and the paper says so rather than leaving it as an apparent
-omission.
+construction, and the paper states this explicitly to keep it from reading as
+an omission.
 
 **Correlation** is the one thing that cannot be expressed per contact. It lives
 in a `LatentModel` on the graph, and contacts opt in by naming a `group`:
@@ -175,27 +175,28 @@ g.latent = LatentModel(states=[
 
 Each state multiplies the existence probability of every contact in the named
 group. Drawing one state per Monte-Carlo sample and sharing it across contacts
-is what turns eq. (12)'s optimistic independence into eq. (13).
+turns eq. (12)'s optimistic independence into eq. (13).
 
 ---
 
-## Stage 3 — estimating the laws
+## Stage 3: estimating the laws
 
-In v1 the parameters come from domain models rather than being fitted
-end-to-end: ITU-R P.618 rain fade for feeder capacity, 3GPP NTN mobility and
+In v1 the parameters come from established domain models, with no end-to-end
+fitting: ITU-R P.618 rain fade for feeder capacity, 3GPP NTN mobility and
 handover dynamics for air/ground timing jitter, and channel-access statistics
 for D2D existence. Because the evaluation **sweeps these parameters as its
 independent variables** (σ in UC1, the fade coefficient of variation in UC2, ρ
-in UC3), the conclusions are sensitivity results over the laws rather than
-artefacts of one calibration.
+in UC3), the conclusions are sensitivity results over the laws, and not
+artefacts of a single calibration.
 
 This is the seam where learning drops in. Contact prediction, in this framing,
-is the regression from observed history to `(p_c, f(T_s,T_e), f(V))` — a
-replacement for Stage 3, not a new pipeline. Nothing downstream would change.
+is the regression from observed history to `(p_c, f(T_s,T_e), f(V))`, so it
+replaces Stage 3 and leaves the rest of the pipeline alone. Nothing downstream
+would change.
 
 ---
 
-## 𝒢 — what you now have
+## 𝒢: what you now have
 
 `StochasticContactGraph` is just the collection of stochastic contacts plus the
 optional latent model, and it offers three views:
@@ -222,7 +223,7 @@ to the stochastic contacts it came from (`g.by_id(cid)`) and re-scored under the
 laws. That round trip is used by every experiment.
 
 `Realization.write_asabr(path)` emits an A-SABR-format plan for the correctness
-anchor. It **raises rather than rounding** on non-integral attributes, because
+anchor. It **raises on non-integral attributes** instead of rounding, because
 A-SABR's lexer parses numbers as `i64`.
 
 ---
@@ -279,12 +280,12 @@ Three sources feed the set, and the third is load-bearing:
 
 1. the mean-plan route;
 2. CGR-style single-contact exclusions of it (SABR's alternative route search);
-3. a **disjoint suppression sweep** — repeatedly exclude every contact used so
+3. a **disjoint suppression sweep**: repeatedly exclude every contact used so
    far and re-route.
 
 Without (3) the timing-certain space backbone never enters the candidate set,
 because it is always slower than the air relays on the nominal plan, and H1
-does not reproduce. That is the fourth entry above.
+does not reproduce. It is the fourth entry above.
 
 ### The SLA-aware router
 
@@ -304,8 +305,8 @@ by mean delivery time. It abandons the air relays for the backbone and drives
 the violation rate to zero. The price is visible in the next call.
 
 `pick_route_chance` is eq. (7), the chance-constrained form: among candidates
-meeting `P[T ≤ D] ≥ 1-ε`, take the fastest. Eq. (9) is what licenses testing
-admissibility on `P` rather than on the quantile.
+meeting `P[T ≤ D] ≥ 1-ε`, take the fastest. Eq. (9) licenses testing
+admissibility on `P` instead of on the quantile.
 
 ```python
 r, s = pick_route_chance(g, src, dst, size, t0, D, rng, m=2000, eps=0.05)
@@ -317,7 +318,7 @@ True 1.0 823.1
 ```
 
 **823 s of end-to-end latency** against the deterministic route's ~75 s: that is
-the reliability price H1 reports, and `run_eps.py` is what turns ε into the knob
+the reliability price H1 reports, and `run_eps.py` turns ε into the knob
 that trades between them. Note `mean_delivery - t0`: with a CPD skeleton the
 release time sits hours into the plan, so absolute clock time is not latency.
 
@@ -341,11 +342,12 @@ from scgraph.analytic import route_p_success
 print(route_p_success(det_sc, size, t0, D))       # 0.760
 ```
 
-against Monte Carlo's `0.762` on the same route — agreement within the CI, which
-is what `tests/test_quantile.py` asserts. **The convolution is the slower path
-here**, roughly 200× slower at the ε values the paper uses (a fixed ~170 ms grid
-cost against 0.75 ms for M = 2000; they cross near M ≈ 5·10⁵). The paper says so
-explicitly, having first assumed the opposite. It is kept for extreme tails.
+against Monte Carlo's `0.762` on the same route, agreement within the CI, which
+`tests/test_quantile.py` asserts. **The convolution is the slower path here**,
+roughly 200× slower at the ε values the paper uses (a fixed ~170 ms grid cost
+against 0.75 ms for M = 2000; they cross near M ≈ 7·10⁵). The paper says so
+explicitly, having first assumed the opposite. It earns its keep only on
+extreme tails.
 
 **The rerouting reference.** `verify_fullgraph` realises the *whole* graph and
 lets a deterministic router re-plan on each draw, which is an omniscient upper
@@ -357,8 +359,8 @@ v = verify_fullgraph(g, src, dst, size, t0, D, 400, rng)
 print(v["p_success"], v["ci"])          # 1.0 (0.9905, 1.0)
 ```
 
-Wilson score intervals, not normal approximations, because the proportions here
-are routinely at or near 1.
+Wilson score intervals, because the proportions here are routinely at or near 1
+and a normal approximation misbehaves there.
 
 ---
 
@@ -367,14 +369,14 @@ are routinely at or near 1.
 The subsumption claim is checked in both directions, and the two checks are of
 different kinds.
 
-**Deterministic corner — an equality, enforced in code.** On a point-mass graph,
+**Deterministic corner: an equality, enforced in code.** On a point-mass graph,
 `cgr_route` must agree with A-SABR exactly:
 
 ```bash
 make anchor      # builds the Rust CLI, then runs 20 randomised cross-checks
 ```
 
-**Bernoulli corner — a lossy projection, measured.** `routing/bernoulli.py`
+**Bernoulli corner: a lossy projection, measured.** `routing/bernoulli.py`
 builds the discrete on/off TEG of the uncertainty-aware DTN line explicitly,
 per eq. (14), then routes on it and scores the result under the *full* laws:
 
@@ -393,8 +395,9 @@ print(route_stats(br, size, t0, D, 2000, rng)["p_success"])
 
 The second number is the honest one: `belief` is the coarse model's *own*
 prediction, which it is entitled to get wrong. Scoring under eq. (1) is the
-caller's job, and it is what makes the ablation a fair comparison of routing
-decisions rather than of evaluators. Sweeping the slot width Δ traces the path
+caller's job, and it is how the ablation stays a comparison of routing
+decisions instead of a comparison of evaluators. Sweeping the slot width Δ
+traces the path
 between the two corners, which is Fig. 3.
 
 ---

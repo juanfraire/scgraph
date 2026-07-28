@@ -36,10 +36,10 @@ gen_uc1() {
 
 # The runtime study (Sec. VII-H) needs the SAME scenario at several
 # constellation sizes, so that plan size is the only thing varying: 6/12/24/48
-# satellites give 98/298/1110/14640 contacts, which is what results/runtime.csv
+# satellites give the 98/298/1110/14640 contacts that results/runtime.csv
 # reports. Only the satellite count in the Walker code changes; every other
-# scenario parameter is held fixed, which is what makes the resulting curve a
-# statement about plan size and not about geometry.
+# scenario parameter is held fixed, so the resulting curve says something about
+# plan size and nothing about geometry.
 #
 # The plane count is held at 3 throughout, matching uc1_skeleton.yaml (so
 # scale_12 reproduces the UC1 skeleton exactly, which is verifiable: its ION

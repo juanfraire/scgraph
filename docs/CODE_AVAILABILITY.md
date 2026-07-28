@@ -57,7 +57,7 @@ At submission, replace the URL with the tagged revision once
 
 ## Notes on wording
 
-- **"openly available"**, not "available on request". The latter is treated as
+- Say **"openly available"**. "Available on request" is treated as
   unavailable by most reproducibility policies, and would be false here anyway.
 - The claim *"regenerates every figure and table"* is literally true and worth
   making, since it is stronger than what most papers can say. It is backed by

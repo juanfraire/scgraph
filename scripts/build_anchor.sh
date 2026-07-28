@@ -8,7 +8,7 @@
 # reader without a Rust toolchain can reproduce every number in the paper
 # without ever running this script. What the anchor buys is the check that our
 # deterministic corner really is A-SABR's, and running it is the only way to
-# see that check pass rather than take it on trust.
+# see that check actually pass.
 #
 # A-SABR is a normal pinned git dependency in rust/asabr-cli/Cargo.toml, so
 # this script is a thin wrapper over `cargo build --release`. It exists to give

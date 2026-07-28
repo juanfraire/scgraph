@@ -11,13 +11,13 @@ fixed M=2000 while this claim is about sweeping *M*:
 This script is that measurement. It exists so no number in the paper is left
 without an artefact behind it.
 
-The point being made is deliberately against intuition, and the paper says so:
-the analytic path is the SLOW one at every epsilon this work uses. Monte Carlo
-is O(M) and starts three orders of magnitude cheaper; the convolution pays a
-fixed grid cost regardless of eps. They only cross once the tail of interest is
-far beyond eps=1e-3, which is the regime an operator certifying extreme tails
-would be in and this paper is not. Do not "optimise" the convolution on the
-assumption that it ought to be the fast path.
+The result runs against intuition, and the paper says so: the analytic path is
+the slow one at every epsilon this work uses. Monte Carlo is O(M) and starts
+three orders of magnitude cheaper, while the convolution pays a fixed grid cost
+regardless of eps. The two only cross once the tail of interest lies far beyond
+eps=1e-3, a regime this paper never enters, though an operator certifying
+extreme tails might. Do not "optimise" the convolution on the assumption that
+it ought to be the fast path.
 
 Wall-clock numbers are properties of the machine, so they are not expected to
 reproduce bit-for-bit; the claim is the shape (MC linear in M, convolution
@@ -98,8 +98,8 @@ def run(quick: bool = False):
         cheaper = "MC" if t_mc < t_conv else "convolution"
         print(f"  M={m:>9,}  MC {t_mc:8.2f} ms   ({cheaper} cheaper)")
 
-    # Crossover by linear interpolation on the O(M) fit, reported rather than
-    # asserted: it is the quantity Sec. V-F puts at ~5e5.
+    # Crossover by linear interpolation on the O(M) fit. Reported for the
+    # reader to judge; Sec. V-F puts it at ~5e5.
     per_draw = rows[-1]["t_mc_ms"] / rows[-1]["M"]
     print(f"crossover at M ~ {t_conv / per_draw:,.0f} draws")
     return rows

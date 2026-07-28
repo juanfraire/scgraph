@@ -129,8 +129,8 @@ def pick_route_chance(
 ) -> tuple[list[StochasticContact] | None, dict]:
     """The chance-constrained form (eq. 7): minimise latency s.t. P[T<=D] >= 1-eps.
 
-    Admissibility is tested on P[T<=D] directly rather than on Q_{1-eps}; eq. (9)
-    is what says those two tests agree.
+    Admissibility is tested on P[T<=D] directly, not on Q_{1-eps}; eq. (9) is the
+    equivalence that lets us do that.
 
     This is where epsilon earns its keep. Tightening it forces the router onto
     slower, safer routes; loosening it lets the router spend reliability to buy

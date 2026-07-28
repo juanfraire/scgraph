@@ -18,14 +18,14 @@ complementary, and doing both costs about twenty minutes once.
 
 | | Software Heritage | Zenodo |
 |---|---|---|
-| Works directly with gitlab.inria.fr | **yes**, "Save code now" on any public repo | no, the GitHub integration is what is automated |
+| Works directly with gitlab.inria.fr | **yes**, "Save code now" on any public repo | no, only the GitHub integration is automated |
 | Issues a DOI | SWHID, and a DOI for deposits | **yes**, a versioned DOI per release |
 | Expected by IEEE / reviewers | less familiar | **the usual citation target** |
 | Captures full git history | **yes**, the whole VCS | no, a snapshot of the tag |
 | Effort | one URL submission | one mirror + one release |
 
 Software Heritage is the natural fit for an Inria-hosted project (Inria founded
-it), and it archives the *history*, not just a tarball. But a reviewer asked to
+it), and it archives the whole *history* instead of a tarball. But a reviewer asked to
 "cite the software" wants a DOI, and Zenodo is where that lives. Hence both.
 
 ---
@@ -35,11 +35,11 @@ it), and it archives the *history*, not just a tarball. But a reviewer asked to
 ### 1. Before submission (by 31 August 2026)
 
 - [ ] Create the GitLab Inria project (`gitlab.inria.fr/jfraire/scgraph`) and
-      push. **Make it public** — an artefact behind a login is not an artefact.
+      push. **Make it public**: an artefact behind a login is no artefact.
 - [ ] Confirm the CI passes: `test:pinned`, then run the `anchor` and
       `reproduce` jobs manually at least once.
 - [ ] Check `make reproduce && make verify` from a **fresh clone** into a clean
-      virtualenv, not from the working tree.
+      virtualenv, and not from the working tree.
 - [ ] Tag `v0.1.0-submission` at the exact commit the manuscript's numbers came
       from, and note the short SHA in the submission cover letter.
 - [ ] Archive that tag on Software Heritage:
@@ -90,10 +90,10 @@ Before tagging, confirm from a fresh clone:
 
 - [ ] `scenarios/uc1_cpd/` and `scenarios/scale_{6,12,24,48}/` are **committed**
       (~190 kB packed). `run_runtime.py` skips missing sizes silently, so a
-      missing skeleton degrades into a quietly shorter figure rather than an
+      missing skeleton quietly shortens the figure instead of raising an
       error.
-- [ ] `results/reference/` is committed — this is what `make verify` compares
-      against, and therefore what pins the manuscript's numbers.
+- [ ] `results/reference/` is committed. `make verify` compares against it, so
+      it is what pins the manuscript's numbers.
 - [ ] `results/*.csv` and `figures/*.{pdf,png}` are committed, so the artefact
       is inspectable without running anything.
 - [ ] `LICENSE`, `CITATION.cff`, `requirements-repro.txt` are present.
@@ -123,13 +123,13 @@ letter if a reviewer asks what "anchored against A-SABR" means concretely.
 
 The pin is already behind upstream (73 commits as of 2026-07-28) and that is
 fine. A-SABR restructured the API the CLI imports, so re-anchoring is a port
-rather than a version bump, and no result in the paper depends on the anchor
-either way. See the README's "Which A-SABR, exactly" for the detail.
+and not a version bump. No result in the paper depends on the anchor either
+way. See the README's "Which A-SABR, exactly" for the detail.
 
 One failure mode is worth naming, because an artefact is supposed to outlive
 its dependencies: **upstream could disappear or rewrite history**, and the pin
-would stop resolving. Everything else still works — no result in the paper
-depends on the anchor, and `make reproduce` never touches it.
+would stop resolving. Everything else still works, since no result in the
+paper depends on the anchor and `make reproduce` never touches it.
 
 If that ever happens, fork A-SABR under an account you control (Inria GitLab or
 personal GitHub) and repoint the `git =` URL. Vendoring the crate into this
@@ -152,8 +152,8 @@ fix. Do not patch A-SABR to work around this.
 IEEE OJ-COMS does not run an artefact-evaluation track, so there is no badge to
 apply for. If a reviewer asks for evidence, point at:
 
-- `make reproduce && make verify` — regenerates every number and diffs it
+- `make reproduce && make verify`, which regenerates every number and diffs it
 - the `reproduce` CI job, which does exactly that on every tag
-- `make anchor` — the cross-check against an independent implementation
+- `make anchor`, the cross-check against an independent implementation
 
-That is a stronger claim than most badges certify.
+Between them those cover more than most badges certify.

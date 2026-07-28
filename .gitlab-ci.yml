@@ -3,8 +3,7 @@
 # Three levels, cheapest first:
 #
 #   test      the suite on the pinned environment. The anchor SKIPS here, since
-#             this job has no Rust toolchain, and the `anchor` job below is what
-#             covers it.
+#             this job has no Rust toolchain; the `anchor` job below covers it.
 #   anchor    builds the A-SABR CLI and runs the cross-check with
 #             SCGRAPH_REQUIRE_ANCHOR=1, so a missing binary fails instead of
 #             skipping. This is the job that keeps the paper's "identical to

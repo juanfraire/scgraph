@@ -4,12 +4,11 @@ Every experiment is seeded, so re-running one must reproduce its CSV exactly.
 This script is the guard on that: it compares the CSVs in results/ against a
 reference copy and exits non-zero on any drift.
 
-Why this exists rather than `git diff results/`: the paper's text, abstract and
+Why this exists at all, given `git diff results/`: the paper's text, abstract and
 conclusion cite specific values, so a refactor that perturbs the ORDER in which
 random numbers are drawn will silently move a figure and invalidate a sentence
 that is already written. Bit-identical output is the only cheap way to notice.
-Two deliberate RNG choices in the runners exist for exactly this reason and are
-load-bearing:
+Two RNG choices in the runners exist for exactly this reason:
 
   * run_uc1.py / run_uc3.py score the Bernoulli ablation on a separate stream
     (SEED + 1), so adding it left every pre-existing series untouched.
@@ -23,7 +22,7 @@ Usage:
 
 Default tolerance is 0: on one machine, with pinned dependencies, the runs are
 bit-identical. Cross-platform (different BLAS, different libm) the last digits
-of a float can move without any modelling change, which is what --tol is for.
+of a float can move without any modelling change, and --tol covers that.
 A run that needs --tol on the SAME machine is a bug, not a rounding artefact.
 """
 

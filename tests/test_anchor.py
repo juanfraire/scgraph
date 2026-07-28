@@ -11,7 +11,7 @@ The anchor needs the Rust CLI (scripts/build_anchor.sh, or `make anchor`).
 Because that pulls in a Rust toolchain and a network clone, a clone without it
 SKIPS these tests rather than failing: a reader reproducing the paper's numbers
 needs none of it. Set SCGRAPH_REQUIRE_ANCHOR=1 to turn the skip into a failure,
-which is what CI and the maintainer's machine do, so the anchor can never be
+as CI and the maintainer's machine both do, so the anchor can never be
 silently lost.
 """
 
