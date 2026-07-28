@@ -1,0 +1,98 @@
+# GitLab CI for scgraph (target: gitlab.inria.fr).
+#
+# Three levels, cheapest first:
+#
+#   test      the suite on the pinned environment. The anchor SKIPS here, since
+#             this job has no Rust toolchain, and the `anchor` job below is what
+#             covers it.
+#   anchor    builds the A-SABR CLI and runs the cross-check with
+#             SCGRAPH_REQUIRE_ANCHOR=1, so a missing binary fails instead of
+#             skipping. This is the job that keeps the paper's "identical to
+#             A-SABR" claim honest.
+#   reproduce the full experiment sweep plus a bit-for-bit diff against
+#             results/reference/. ~11 min, so it is manual on branches and
+#             automatic on tags: a release must reproduce the paper.
+#
+# `test` also runs on the loose bounds in pyproject.toml, not only the pins, so
+# a dependency release that breaks the library is noticed here rather than by a
+# reader.
+
+stages: [test, anchor, reproduce]
+
+default:
+  image: python:3.14-slim
+  before_script:
+    - python -V
+    - pip install --quiet --upgrade pip
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  GIT_DEPTH: "0"
+
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths: [.cache/pip]
+
+# ------------------------------------------------------------------ stage: test
+
+test:pinned:
+  stage: test
+  script:
+    - pip install --quiet -r requirements-repro.txt
+    - pip install --quiet -e . --no-deps
+    - pytest -q --junitxml=report.xml
+  artifacts:
+    when: always
+    paths: [report.xml]
+    reports:
+      junit: report.xml
+    expire_in: 1 week
+
+# Same suite against whatever the loose bounds resolve to today. Allowed to
+# fail: an upstream release breaking us is worth seeing, but should not block a
+# merge on its own.
+test:latest:
+  stage: test
+  allow_failure: true
+  script:
+    - pip install --quiet -e ".[dev]"
+    - pytest -q
+
+# ---------------------------------------------------------------- stage: anchor
+
+anchor:
+  stage: anchor
+  image: rust:1.90-slim
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends git python3 python3-venv python3-pip
+  script:
+    - python3 -m venv .venv
+    - .venv/bin/pip install --quiet -r requirements-repro.txt
+    - .venv/bin/pip install --quiet -e . --no-deps
+    # Clones A-SABR at the pinned revision and applies the stable-Rust patch;
+    # see scripts/build_anchor.sh for why the patch is needed at all.
+    - bash scripts/build_anchor.sh
+    - SCGRAPH_REQUIRE_ANCHOR=1 .venv/bin/pytest tests/test_anchor.py -q
+
+# ------------------------------------------------------------- stage: reproduce
+
+# The guarantee this job defends: the numbers in the manuscript are the numbers
+# this code produces. It regenerates every CSV and diffs against
+# results/reference/, and fails on any drift outside the wall-clock columns.
+reproduce:
+  stage: reproduce
+  timeout: 40m
+  script:
+    - pip install --quiet -r requirements-repro.txt
+    - pip install --quiet -e . --no-deps
+    - make reproduce PY=python
+    # Cross-platform float noise: CI is x86 glibc, the reference was recorded on
+    # arm64 macOS, so allow a relative tolerance far tighter than any quoted digit.
+    - python scripts/verify_results.py --tol 1e-9
+  artifacts:
+    paths: [results/, figures/]
+    expire_in: 1 month
+  rules:
+    - if: $CI_COMMIT_TAG          # every release must reproduce
+    - when: manual
+      allow_failure: true

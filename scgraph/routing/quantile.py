@@ -4,7 +4,7 @@ Candidate routes come from the deterministic router run on the mean plan and
 on sampled realizations (each realization's optimal route is a candidate);
 each candidate is then scored under the laws by per-route Monte Carlo, and the
 router picks argmax P[T <= D] (eq. 6) or, equivalently for a fixed epsilon,
-min Q_{1-eps} (eqs. 8-9, 13).
+min Q_{1-eps} (eqs. 8-10).
 """
 
 from __future__ import annotations
@@ -76,7 +76,7 @@ def route_stats(
     eps: float = 0.05,
     latent=None,
 ) -> dict:
-    """P[T<=D] (eq. 6) and Q_{1-eps} (eq. 8) for one route, by Monte Carlo."""
+    """P[T<=D] (eq. 5) and Q_{1-eps} (eq. 8) for one route, by Monte Carlo."""
     t = sample_route_deliveries(route, size, t0, m, rng, latent=latent)
     p = float(np.mean(t <= deadline))
     q = float(np.quantile(t, 1.0 - eps)) if np.isfinite(t).mean() >= 1.0 - eps else math.inf
@@ -113,3 +113,44 @@ def pick_route(
         if better:
             best, best_stats = route, s
     return best, best_stats
+
+
+def pick_route_chance(
+    graph: StochasticContactGraph,
+    src: int,
+    dst: int,
+    size: float,
+    t0: float,
+    deadline: float,
+    rng: np.random.Generator,
+    m: int = 2000,
+    eps: float = 0.05,
+    n_realizations: int = 40,
+) -> tuple[list[StochasticContact] | None, dict]:
+    """The chance-constrained form (eq. 7): minimise latency s.t. P[T<=D] >= 1-eps.
+
+    Admissibility is tested on P[T<=D] directly rather than on Q_{1-eps}; eq. (9)
+    is what says those two tests agree.
+
+    This is where epsilon earns its keep. Tightening it forces the router onto
+    slower, safer routes; loosening it lets the router spend reliability to buy
+    delivery time. When no candidate meets the constraint the problem is
+    infeasible, and we fall back to argmax P[T<=D] so the router still returns
+    its best effort (and the caller can see the constraint was not met).
+    """
+    cands = candidate_routes(graph, src, dst, size, t0, rng, n_realizations)
+    scored = [
+        (r, route_stats(r, size, t0, deadline, m, rng, eps=eps, latent=graph.latent))
+        for r in cands
+    ]
+    if not scored:
+        return None, {"p_success": 0.0, "feasible": False}
+
+    ok = [(r, s) for r, s in scored if s["p_success"] >= 1.0 - eps - 1e-12]
+    if ok:
+        route, stats = min(ok, key=lambda rs: rs[1].get("mean_delivery", math.inf))
+        stats = {**stats, "feasible": True}
+        return route, stats
+
+    route, stats = max(scored, key=lambda rs: rs[1]["p_success"])
+    return route, {**stats, "feasible": False}

@@ -1,0 +1,67 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite both the software itself and the paper
+  it accompanies.
+title: "scgraph: stochastic contact graphs and SLA-aware DTN routing under uncertainty"
+abstract: >-
+  Companion library for "Stochastic Contact Graphs: Rethinking the Contact Plan
+  for the 6G Space-Air-Ground Continuum". Generalises the DTN contact plan so
+  that each contact carries a joint law over start time, end time and capacity,
+  and formulates routing as a chance-constrained deliver-by-deadline problem.
+  Implements the store-carry-forward arrival recursion, Monte-Carlo and analytic
+  quantile evaluation, correlation-aware replication, the Bernoulli-TEG
+  projection used for the subsumption ablation, and three planning-plane
+  placements. Its deterministic router is checked against the A-SABR framework
+  on point-mass graphs.
+type: software
+authors:
+  - family-names: Fraire
+    given-names: Juan A.
+    affiliation: "Inria, INSA Lyon, CITI, UR3720, Villeurbanne, France / Universidad Nacional de Córdoba and CONICET, Córdoba, Argentina"
+  - family-names: Guérin Lassous
+    given-names: Isabelle
+    affiliation: "Université Claude Bernard Lyon 1, ENS de Lyon, CNRS, Inria, LIP, Lyon, France"
+  - family-names: Begin
+    given-names: Thomas
+    affiliation: "Université Claude Bernard Lyon 1, ENS de Lyon, CNRS, Inria, LIP, Lyon, France"
+  - family-names: Lavinal
+    given-names: Emmanuel
+    affiliation: "IRIT, Université de Toulouse, CNRS, UT3, Toulouse, France"
+version: "0.1.0"
+date-released: "2026-08-31"
+license: MIT
+repository-code: "https://gitlab.inria.fr/jfraire/scgraph"
+keywords:
+  - delay-tolerant networking
+  - contact plan
+  - contact graph routing
+  - non-terrestrial networks
+  - 6G
+  - stochastic modelling
+  - chance-constrained routing
+  - SLA
+  - SABR
+
+# The paper. Volume, pages and DOI are placeholders until it is published;
+# update them at acceptance, together with the release tag (docs/ARCHIVAL.md).
+preferred-citation:
+  type: article
+  title: "Stochastic Contact Graphs: Rethinking the Contact Plan for the 6G Space-Air-Ground Continuum"
+  authors:
+    - family-names: Fraire
+      given-names: Juan A.
+    - family-names: Guérin Lassous
+      given-names: Isabelle
+    - family-names: Begin
+      given-names: Thomas
+    - family-names: Lavinal
+      given-names: Emmanuel
+  journal: "IEEE Open Journal of the Communications Society"
+  year: 2027
+  volume: 0          # TODO at acceptance
+  start: 0           # TODO at acceptance
+  end: 0             # TODO at acceptance
+  doi: "10.1109/OJCOMS.2026.XXXXXX"   # TODO at acceptance
+  notes: >-
+    Special Issue on Delay-Tolerant Networking for 6G. Under review; volume,
+    pages and DOI are placeholders.

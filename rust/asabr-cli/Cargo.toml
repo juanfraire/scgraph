@@ -3,13 +3,21 @@ name = "asabr-cli"
 version = "0.1.0"
 edition = "2024"
 
-# Level-0 A-SABR CLI (PLAN.md section 7.1): load a contact plan, route one
-# bundle, print the best route as JSON. Used by scgraph as the deterministic
-# routing oracle for the point-mass correctness anchor and inside the
-# Monte-Carlo loop.
+# Level-0 A-SABR CLI: load a contact plan, route one bundle, print the best
+# route as JSON. Used by scgraph as the deterministic routing oracle for the
+# point-mass correctness anchor (paper Sec. VII-A).
+#
+# The dependency is a *relative* path into rust/vendor/a-sabr, which
+# scripts/build_anchor.sh creates by cloning A-SABR at a pinned revision and
+# applying patches/0001-stable-rust-uninit-array.patch. Do not run `cargo
+# build` here directly: without that script the path does not exist, and
+# upstream at the pinned revision does not compile on stable Rust anyway. Run
+#     scripts/build_anchor.sh        (or: make anchor)
+# The vendor directory is gitignored, so the pin lives in the script and the
+# patch, not in a checked-in copy of someone else's crate.
 
 [dependencies]
-a_sabr = { path = "../../../a-sabr/asabr" }
+a_sabr = { path = "../vendor/a-sabr/asabr" }
 serde_json = "1.0"
 
 [profile.release]

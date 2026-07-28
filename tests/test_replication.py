@@ -1,4 +1,4 @@
-"""Eqs. (10)-(11): independence is optimistic under a shared latent state."""
+"""Eqs. (12)-(13): independence is optimistic under a shared latent state."""
 
 import numpy as np
 import pytest
@@ -28,7 +28,7 @@ def test_correlated_copies_fail_together():
     p_joint = joint_success([r1, r2], size, t0, D, m, rng, latent=latent)
     p_indep = independent_success([p1, p1])
 
-    # eq. (11) < eq. (10) under positive correlation
+    # eq. (13) < eq. (12) under positive correlation
     assert p_joint < p_indep - 0.02
 
 

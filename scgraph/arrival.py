@@ -73,7 +73,7 @@ def joint_route_set_deliveries(
 
     Contacts shared by several routes get one draw per MC sample, and the
     latent state is shared by everything: this is what makes replication
-    correlation-aware (eq. 11) instead of optimistic (eq. 10).
+    correlation-aware (eq. 13) instead of optimistic (eq. 12).
     """
     # one latent draw per sample
     if latent is not None:

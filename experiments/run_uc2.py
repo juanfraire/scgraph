@@ -17,7 +17,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[0]))
 import _style
 from _style import STYLE
 
-from scgraph.scenarios.uc2_logistics import provisioning
+from scgraph.scenarios.uc1_event import GATEWAY, load_skeleton
+from scgraph.scenarios.uc2_logistics import provisioning_cpd
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED = 20260709
@@ -28,11 +29,16 @@ def main():
     _style.setup()
     rng = np.random.default_rng(SEED)
 
-    demand, mean_vol, eps = 4000.0, 1000.0, 0.05
+    # nominal pass volumes come from the CPD skeleton's real downlink passes at
+    # the gateway, so they are heterogeneous for a geometric reason before any
+    # fade is applied; demand is what four average passes would carry
+    skeleton = load_skeleton()
+    gs = skeleton.node(GATEWAY)
+    n_passes, eps = 4, 0.05
     cvs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     rows = []
     for cv in cvs:
-        r = provisioning(rng, demand, mean_vol, cv, eps=eps)
+        r = provisioning_cpd(rng, skeleton, gs, n_passes, cv, eps=eps)
         r["cv"] = cv
         rows.append(r)
         print(

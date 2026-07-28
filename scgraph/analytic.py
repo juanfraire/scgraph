@@ -97,7 +97,7 @@ def route_p_success(
     deadline: float,
     n_grid: int = 4000,
 ) -> float:
-    """P[T_pi <= D] (eq. 6) from the analytic CDF."""
+    """P[T_pi <= D] (eq. 5) from the analytic CDF."""
     t_grid = np.linspace(t0, deadline, n_grid)
     F = route_delivery_cdf(route, size, t0, t_grid)
     return float(F[-1])

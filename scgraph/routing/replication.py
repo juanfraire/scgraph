@@ -1,8 +1,8 @@
-"""Replication as a reliability lever (Sec. V-E, eqs. 10-11).
+"""Replication as a reliability lever (Sec. V-E, eqs. 12-13).
 
 Joint success of a route set is estimated under JOINT sampling (shared
-contact draws + shared latent state), which captures eq. (11)'s correlation
-penalty; assuming independence instead gives eq. (10)'s optimistic value.
+contact draws + shared latent state), which captures eq. (13)'s correlation
+penalty; assuming independence instead gives eq. (12)'s optimistic value.
 `greedy_select` budgets N copies by marginal joint-success gain, which
 naturally diversifies across latent-state groups.
 """
@@ -24,7 +24,7 @@ def joint_success(
     rng: np.random.Generator,
     latent=None,
 ) -> float:
-    """P[any copy delivered by D] under joint (correlated) sampling: eq. (11)."""
+    """P[any copy delivered by D] under joint (correlated) sampling: eq. (13)."""
     if not routes:
         return 0.0
     t = joint_route_set_deliveries(routes, size, t0, m, rng, latent=latent)
@@ -32,7 +32,7 @@ def joint_success(
 
 
 def independent_success(p_singles: list[float]) -> float:
-    """Eq. (10): the independence approximation, for comparison only."""
+    """Eq. (12): the independence approximation, for comparison only."""
     out = 1.0
     for p in p_singles:
         out *= 1.0 - p

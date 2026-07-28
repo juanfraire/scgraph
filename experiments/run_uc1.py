@@ -2,9 +2,13 @@
 
 For each jitter level sigma, R random instances are generated. On each:
   det  - deterministic CGR on the nominal (mean) plan, evaluated under the laws
+  bern - the Bernoulli-TEG corner of G at a tractable slot width (ablation)
   scg  - SLA-aware route: argmax P[T <= D] over the candidate set (eq. 6)
-Both routes are then scored with M Monte-Carlo draws; the per-instance
-violation probability is averaged over instances with a 95% CI.
+All routes are then scored with M Monte-Carlo draws under the FULL laws; the
+per-instance violation probability is averaged over instances with a 95% CI.
+
+The Bernoulli ablation draws from a dedicated RNG stream so that adding it
+leaves the det/scg numbers bit-identical to the runs without it.
 
 Usage: python experiments/run_uc1.py [--quick]
 Outputs: results/uc1.csv, figures/uc1_h1.{pdf,png}
@@ -25,12 +29,17 @@ import _style
 from _style import STYLE
 
 from scgraph.arrival import sample_route_deliveries
+from scgraph.routing.bernoulli import bernoulli_route
 from scgraph.routing.deterministic import cgr_route
 from scgraph.routing.quantile import pick_route
-from scgraph.scenarios.uc1_event import make_instance
+from scgraph.scenarios.uc1_event import make_instance_cpd as make_instance
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED = 20260709
+# Slot width for the Bernoulli-TEG ablation. ~12 slots over the UC1 horizon,
+# the order of magnitude at which the slotted MDPs of the uncertainty-aware DTN
+# line stay tractable. figures/subsumption.pdf sweeps this.
+BERN_SLOT = 30.0
 
 
 def run(quick: bool = False):
@@ -38,10 +47,12 @@ def run(quick: bool = False):
     R = 20 if quick else 60          # instances per sigma
     M = 800 if quick else 2000       # MC draws per route evaluation
     rng = np.random.default_rng(SEED)
+    rng_b = np.random.default_rng(SEED + 1)   # ablation-only stream
 
     rows = []
     for sigma in sigmas:
         viol_det, viol_scg, lat_det, lat_scg = [], [], [], []
+        viol_bern = []
         for _ in range(R):
             g, p = make_instance(rng, sigma)
             src, dst, size, t0, D = p["src"], p["dst"], p["size"], p["t0"], p["deadline"]
@@ -55,13 +66,25 @@ def run(quick: bool = False):
                 t = sample_route_deliveries(det_sc, size, t0, M, rng)
                 viol_det.append(float(np.mean(~(t <= D))))
                 if np.isfinite(t).any():
-                    lat_det.append(float(np.mean(t[np.isfinite(t)])))
+                    # end-to-end latency, not absolute clock time: with a CPD
+                    # skeleton the release time sits deep inside the plan
+                    lat_det.append(float(np.mean(t[np.isfinite(t)])) - t0)
 
             # SLA-aware router
             route, stats = pick_route(g, src, dst, size, t0, D, rng, m=M)
             viol_scg.append(1.0 - stats["p_success"] if route else 1.0)
             if route and math.isfinite(stats["mean_delivery"]):
-                lat_scg.append(stats["mean_delivery"])
+                lat_scg.append(stats["mean_delivery"] - t0)
+
+            # ablation: route on the Bernoulli-TEG projection, live with the laws
+            b_route, _ = bernoulli_route(
+                g, src, dst, size, t0, D, BERN_SLOT, rng_b, m=M
+            )
+            if b_route is None:
+                viol_bern.append(1.0)
+            else:
+                tb = sample_route_deliveries(b_route, size, t0, M, rng_b)
+                viol_bern.append(float(np.mean(~(tb <= D))))
 
         def ci(xs):
             xs = np.asarray(xs)
@@ -71,14 +94,16 @@ def run(quick: bool = False):
             {
                 "sigma": sigma,
                 "viol_det": float(np.mean(viol_det)), "ci_det": ci(viol_det),
+                "viol_bern": float(np.mean(viol_bern)), "ci_bern": ci(viol_bern),
                 "viol_scg": float(np.mean(viol_scg)), "ci_scg": ci(viol_scg),
                 "lat_det": float(np.mean(lat_det)) if lat_det else math.nan,
                 "lat_scg": float(np.mean(lat_scg)) if lat_scg else math.nan,
-                "R": R, "M": M,
+                "R": R, "M": M, "bern_slot": BERN_SLOT,
             }
         )
         print(
             f"sigma={sigma:5.1f}  viol(det)={rows[-1]['viol_det']:.3f}"
+            f"  viol(bern)={rows[-1]['viol_bern']:.3f}"
             f"  viol(scg)={rows[-1]['viol_scg']:.3f}"
         )
     return rows
@@ -104,6 +129,9 @@ def main():
     s = [r["sigma"] for r in rows]
     ax1.errorbar(s, [r["viol_det"] for r in rows], yerr=[r["ci_det"] for r in rows],
                  label="deterministic CGR (mean plan)", capsize=2, **STYLE["base1"])
+    ax1.errorbar(s, [r["viol_bern"] for r in rows], yerr=[r["ci_bern"] for r in rows],
+                 label=rf"Bernoulli TEG ($\Delta={BERN_SLOT:.0f}$ s)", capsize=2,
+                 color="#7b4fa8", linestyle="-.", marker="^")
     ax1.errorbar(s, [r["viol_scg"] for r in rows], yerr=[r["ci_scg"] for r in rows],
                  label="SLA-aware (stochastic contact graph)", capsize=2, **STYLE["scg"])
     ax1.set_xlabel(r"timing jitter $\sigma(T_s, T_e)$ [s]")

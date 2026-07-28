@@ -1,4 +1,4 @@
-"""M1 consistency: analytic CDF propagation vs Monte Carlo, and eq. (8)'s
+"""M1 consistency: analytic CDF propagation vs Monte Carlo, and eq. (9)'s
 quantile/chance-constraint equivalence on a hand-computable case."""
 
 import numpy as np
@@ -44,8 +44,8 @@ def test_analytic_matches_mc():
     assert F[-1] == pytest.approx(np.isfinite(t).mean(), abs=0.006)
 
 
-def test_quantile_equivalence_eq8():
-    """Q_{1-eps}(pi) <= D  <=>  P[T <= D] >= 1-eps (eq. 8)."""
+def test_quantile_equivalence_eq9():
+    """Q_{1-eps}(pi) <= D  <=>  P[T <= D] >= 1-eps (eq. 9)."""
     route = jittered_route()
     size, t0, eps = 100.0, 0.0, 0.25
     t_grid = np.linspace(0.0, 400.0, 4001)

@@ -4,7 +4,7 @@ Topology per instance: source 0, destination 1, two regions of D2D relays.
 Region A relays are nominally faster; all relay contacts are opportunistic
 (p_exist < 1) and share their region's latent collapse state: when a region
 collapses, every contact in it drops to a small existence probability
-TOGETHER (eq. 11's regime).
+TOGETHER (eq. 13's regime).
 
 Policies at equal copy budget N:
   stale   - the single nominal-best route from the pre-collapse plan, blind

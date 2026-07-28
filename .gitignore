@@ -1,5 +1,17 @@
 .venv/
 __pycache__/
 *.egg-info/
-rust/asabr-cli/target/
 .pytest_cache/
+.DS_Store
+
+# Rust build output, and the A-SABR checkout that scripts/build_anchor.sh
+# creates. The pin lives in that script plus the patch beside it, so the
+# upstream crate is fetched rather than copied into this repository.
+rust/asabr-cli/target/
+rust/vendor/
+
+# scenarios/scale_*/ used to be ignored because the working tree is ~7 MB.
+# They are committed now: the JSON compresses to ~190 kB in the pack, which is
+# a small price for making experiments/run_runtime.py reproducible from a bare
+# clone. Regenerate them with scripts/generate_skeletons.sh if the scenario
+# changes.

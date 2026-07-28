@@ -1,0 +1,53 @@
+diff --git a/asabr/src/parsing.rs b/asabr/src/parsing.rs
+index b06ab5e..8dbe5e8 100644
+--- a/asabr/src/parsing.rs
++++ b/asabr/src/parsing.rs
+@@ -252,7 +252,9 @@ impl<T: Parse, const N: usize> Parse for [T; N] {
+     const NOFEED: bool = T::NOFEED;
+     fn parse(mut p: Self::Parser) -> Result<Self, &'static str> {
+         if Self::NOFEED {
+-            let mut arr: [_; _] = MaybeUninit::uninit().into();
++            // An array of MaybeUninit needs no initialization; this is the stable
++            // idiom (MaybeUninit::uninit().into() never existed on stable rustc).
++            let mut arr: [MaybeUninit<T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+             for i in 0..N {
+                 match T::parse(T::Parser::default()) {
+                     Err(e) => {
+@@ -266,15 +268,19 @@ impl<T: Parse, const N: usize> Parse for [T; N] {
+                 };
+             }
+ 
+-            let arr: MaybeUninit<_> = arr.into();
+-            Ok(unsafe { arr.assume_init() })
++            // All N slots initialized: read out as [T; N]. A generic-size
++            // transmute is rejected by rustc, so go through a pointer cast;
++            // [MaybeUninit<T>; N] has no Drop, so no double-drop is possible.
++            Ok(unsafe { (&arr as *const [MaybeUninit<T>; N] as *const [T; N]).read() })
+         } else {
+             if p.2 != N {
+                 return Err("Array terminated while elements remain to be parsed");
+             }
+             p.2 = 0; // So Drop do nothing
+-            let res: MaybeUninit<_> = mem::replace(&mut p.1, MaybeUninit::uninit().into()).into();
+-            Ok(unsafe { res.assume_init() })
++            let res = mem::replace(&mut p.1, unsafe {
++                MaybeUninit::uninit().assume_init()
++            });
++            Ok(unsafe { (&res as *const [MaybeUninit<T>; N] as *const [T; N]).read() })
+         }
+     }
+     fn feed(tok: Self::Token, parser: &mut Self::Parser) -> Result<bool, &'static str> {
+@@ -572,7 +578,12 @@ impl<T: Parse> Default for VecBuilder<T> {
+ }
+ impl<T: Parse, const N: usize> Default for ArrayParser<T, N> {
+     fn default() -> Self {
+-        Self(Default::default(), MaybeUninit::uninit().into(), 0)
++        // Stable uninit-array idiom; see Parse for [T; N] above.
++        Self(
++            Default::default(),
++            unsafe { MaybeUninit::uninit().assume_init() },
++            0,
++        )
+     }
+ }
+ 
