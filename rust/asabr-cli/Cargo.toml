@@ -16,6 +16,19 @@ edition = "2024"
 # features stabilised through 1.97; on an older toolchain the build fails with
 # a list of E0658 "use of unstable library feature" errors, which means the
 # toolchain is out of date and not that anything is wrong with A-SABR.
+#
+# THE PIN: 1277e36, dated 2026-06-30 ("ops(ci): add manual workflow"). This is
+# the A-SABR the paper's anchor was checked against, and it is also recorded in
+# the committed Cargo.lock.
+#
+# Do not bump it casually. As of 2026-07-28 upstream main is 73 commits ahead
+# and has restructured what this CLI imports: `routing` moved to
+# `pathfinding::top_level`, `route_stage` is gone, and `Bundle` lost its
+# `source` / `destinations` fields. src/main.rs does not compile against main
+# (8 errors), so re-anchoring means porting the CLI, not editing this line.
+#
+# Nothing in results/ or figures/ depends on the anchor, so a stale pin costs
+# the paper nothing; it only fixes *which* A-SABR the equality claim refers to.
 
 [dependencies]
 a_sabr = { git = "https://github.com/DTN-MTP/A-SABR.git", rev = "1277e360f2d61a593c336c6f6eb2e583758d7580" }

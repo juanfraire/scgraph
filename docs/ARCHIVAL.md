@@ -73,6 +73,7 @@ URL and the tag. Reviewers can clone it.
 Fill in as they are issued.
 
 ```
+A-SABR pin       : 1277e360f2d61a593c336c6f6eb2e583758d7580  (2026-06-30, fixed)
 Submission tag   : v0.1.0-submission   commit ________
 SWHID            : swh:1:rev:__________________________________
 Zenodo concept   : 10.5281/zenodo.__________   (cite this one)
@@ -107,9 +108,23 @@ vendored; Cargo fetches it at the pinned revision.
 
 ## The A-SABR dependency, and the risk it carries
 
-The anchor depends on an external repository at a pinned revision
-(`1277e360f2d61a593c336c6f6eb2e583758d7580`), fetched by Cargo. Nothing is
-vendored or patched.
+The anchor depends on an external repository at a pinned revision, fetched by
+Cargo. Nothing is vendored or patched.
+
+```
+repo : https://github.com/DTN-MTP/A-SABR.git
+rev  : 1277e360f2d61a593c336c6f6eb2e583758d7580
+date : 2026-06-30  ("ops(ci): add manual workflow")
+```
+
+Recorded in two places, both committed: `rust/asabr-cli/Cargo.toml` (`rev =`)
+and `rust/asabr-cli/Cargo.lock`. Quote this revision in the paper or the cover
+letter if a reviewer asks what "anchored against A-SABR" means concretely.
+
+The pin is already behind upstream (73 commits as of 2026-07-28) and that is
+fine. A-SABR restructured the API the CLI imports, so re-anchoring is a port
+rather than a version bump, and no result in the paper depends on the anchor
+either way. See the README's "Which A-SABR, exactly" for the detail.
 
 One failure mode is worth naming, because an artefact is supposed to outlive
 its dependencies: **upstream could disappear or rewrite history**, and the pin

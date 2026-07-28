@@ -183,9 +183,36 @@ simply skip, with a message saying how to enable them. Setting
 `SCGRAPH_REQUIRE_ANCHOR=1` turns the skip into a failure; CI does this, so the
 anchor cannot be silently lost.
 
+### Which A-SABR, exactly
+
 A-SABR is a normal pinned git dependency
 ([`rust/asabr-cli/Cargo.toml`](rust/asabr-cli/Cargo.toml)); nothing is vendored
-or patched.
+or patched. The anchor was checked against exactly this revision:
+
+| | |
+|---|---|
+| Repository | `https://github.com/DTN-MTP/A-SABR.git` |
+| Revision | `1277e360f2d61a593c336c6f6eb2e583758d7580` |
+| Dated | 2026-06-30 (`ops(ci): add manual workflow`) |
+| Recorded in | `Cargo.toml` (`rev =`) **and** the committed `Cargo.lock` |
+
+**Upstream has moved on, and the pin is deliberate.** As of 2026-07-28 A-SABR's
+`main` is 73 commits ahead and has restructured the API the CLI uses:
+`a_sabr::routing` was removed in favour of `pathfinding::top_level`,
+`route_stage` is gone, and `Bundle` no longer has `source` / `destinations`
+fields. `src/main.rs` does not compile against `main` (8 errors), so **bumping
+the pin is a port, not a version bump.**
+
+That is the normal condition for a paper artefact, and it costs the paper
+nothing: the anchor is a *correctness cross-check*, not a dependency of any
+result. No CSV or figure changes if the pin moves, or if it is never touched
+again. What the pin buys is that "identical to A-SABR" names one specific
+A-SABR, so a reviewer can reproduce the comparison rather than chase a moving
+target.
+
+To re-anchor against a newer A-SABR: update `rev` in `Cargo.toml`, port
+`src/main.rs` to the new API, then `make anchor`. If the 21 anchor tests still
+pass, the claim holds against that revision too.
 
 Two caveats, both real and both worth knowing:
 
