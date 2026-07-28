@@ -10,34 +10,22 @@
 # deterministic corner really is A-SABR's, and running it is the only way to
 # see that check pass rather than take it on trust.
 #
-# Why this is a script and not plain `cargo build`:
+# A-SABR is a normal pinned git dependency in rust/asabr-cli/Cargo.toml, so
+# this script is a thin wrapper over `cargo build --release`. It exists to give
+# a clear message for the one failure mode that is not obvious:
 #
-#   A-SABR at the pinned revision does not compile on current stable Rust. Its
-#   parser uses `MaybeUninit::uninit().into()` to build a `[MaybeUninit<T>; N]`,
-#   which stable rustc has never accepted; rustc 1.90 rejects it with E0277.
-#   The fix is three call sites rewritten to the stable uninit-array idiom,
-#   carried here as patches/0001-stable-rust-uninit-array.patch and applied to a
-#   clean upstream checkout. It touches parsing.rs only, so no routing
-#   behaviour changes, and the anchor test is what proves the routes still agree.
-#
-#   The patch belongs upstream. Until it lands, this script is what makes the
-#   anchor reproducible off the original author's machine (docs/ARCHIVAL.md).
+#   A-SABR uses standard-library features stabilised up to Rust 1.97. On an
+#   older toolchain the build fails with a list of E0658 "use of unstable
+#   library feature" errors, which reads like A-SABR is nightly-only. It is
+#   not: it targets stable, and its CI runs on stable. The toolchain is simply
+#   out of date, and `rustup update` fixes it.
 #
 # Usage:  scripts/build_anchor.sh
-# Env:    ASABR_SRC=/path/to/a-sabr   use an existing checkout (linked, not cloned;
-#                                     you are then responsible for its revision
-#                                     and for having the patch applied)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CLI="$REPO/rust/asabr-cli"
-PATCH="$CLI/patches/0001-stable-rust-uninit-array.patch"
-VENDOR="$REPO/rust/vendor/a-sabr"
-
-# Pinned so the anchor is checked against one known A-SABR, not "whatever main
-# is today". Bump this and the patch together.
-ASABR_URL="https://github.com/DTN-MTP/A-SABR.git"
-ASABR_REV="1277e360f2d61a593c336c6f6eb2e583758d7580"
+MIN_RUST="1.97"
 
 command -v cargo >/dev/null || {
   echo "error: cargo not found. Install Rust from https://rustup.rs and re-run." >&2
@@ -45,34 +33,18 @@ command -v cargo >/dev/null || {
   exit 1
 }
 
-mkdir -p "$REPO/rust/vendor"
-
-# rust/asabr-cli/Cargo.toml has a fixed relative path dependency on
-# ../vendor/a-sabr/asabr. Both modes below make that path resolve, so the
-# manifest never has to be edited and the working tree stays clean.
-if [ -n "${ASABR_SRC:-}" ]; then
-  echo "==> linking rust/vendor/a-sabr -> $ASABR_SRC"
-  echo "    (ASABR_SRC set: revision and patch state are yours to manage)"
-  rm -rf "$VENDOR"
-  ln -s "$ASABR_SRC" "$VENDOR"
-else
-  if [ -L "$VENDOR" ]; then          # drop a stale ASABR_SRC symlink
-    rm -f "$VENDOR"
-  fi
-  if [ ! -d "$VENDOR/.git" ]; then
-    echo "==> cloning A-SABR into rust/vendor/a-sabr"
-    git clone --quiet "$ASABR_URL" "$VENDOR"
-  fi
-  echo "==> checking out ${ASABR_REV:0:12}"
-  git -C "$VENDOR" fetch --quiet origin "$ASABR_REV" 2>/dev/null || true
-  # --force resets the tree, so the patch below always applies to pristine
-  # upstream and re-running this script is idempotent.
-  git -C "$VENDOR" checkout --quiet --force "$ASABR_REV"
-  echo "==> applying $(basename "$PATCH")"
-  git -C "$VENDOR" apply "$PATCH"
+# rust-toolchain.toml pins the version, so rustc reports the pinned one if it
+# is installed and rustup fetches it if not. Warn before the build rather than
+# after, because the E0658 wall is genuinely misleading.
+have="$(rustc --version 2>/dev/null | cut -d' ' -f2 || echo 0)"
+lowest="$(printf '%s\n%s\n' "$MIN_RUST" "$have" | sort -V | head -1)"
+if [ "$lowest" != "$MIN_RUST" ]; then
+  echo "warning: rustc $have is older than the $MIN_RUST A-SABR needs." >&2
+  echo "         If the build fails with E0658 'unstable library feature'," >&2
+  echo "         run 'rustup update' -- that is the fix, not a patch." >&2
 fi
 
-echo "==> building asabr-cli"
+echo "==> building asabr-cli (A-SABR fetched at the pin in Cargo.toml)"
 ( cd "$CLI" && cargo build --release )
 
 BIN="$CLI/target/release/asabr-cli"

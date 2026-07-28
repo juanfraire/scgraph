@@ -7,17 +7,18 @@ edition = "2024"
 # route as JSON. Used by scgraph as the deterministic routing oracle for the
 # point-mass correctness anchor (paper Sec. VII-A).
 #
-# The dependency is a *relative* path into rust/vendor/a-sabr, which
-# scripts/build_anchor.sh creates by cloning A-SABR at a pinned revision and
-# applying patches/0001-stable-rust-uninit-array.patch. Do not run `cargo
-# build` here directly: without that script the path does not exist, and
-# upstream at the pinned revision does not compile on stable Rust anyway. Run
-#     scripts/build_anchor.sh        (or: make anchor)
-# The vendor directory is gitignored, so the pin lives in the script and the
-# patch, not in a checked-in copy of someone else's crate.
+# A-SABR is fetched by Cargo at a pinned revision, so the anchor is checked
+# against one known upstream rather than "whatever main is today", and nothing
+# needs to be vendored or patched. Build with `cargo build --release` here, or
+# `make anchor` from the repository root.
+#
+# Requires Rust >= 1.97 (see rust-toolchain.toml). A-SABR uses standard-library
+# features stabilised through 1.97; on an older toolchain the build fails with
+# a list of E0658 "use of unstable library feature" errors, which means the
+# toolchain is out of date and not that anything is wrong with A-SABR.
 
 [dependencies]
-a_sabr = { path = "../vendor/a-sabr/asabr" }
+a_sabr = { git = "https://github.com/DTN-MTP/A-SABR.git", rev = "1277e360f2d61a593c336c6f6eb2e583758d7580" }
 serde_json = "1.0"
 
 [profile.release]

@@ -1,0 +1,10 @@
+# A-SABR uses standard-library features stabilised up to Rust 1.97, so an older
+# toolchain fails the build with a list of E0658 "use of unstable library
+# feature" errors. Pinning the minimum here turns that into an actionable
+# message from rustup instead of a wall of compiler errors that reads like a
+# bug in A-SABR.
+#
+# `channel` is a floor, not a ceiling: rustup will use exactly this version.
+# Bump it freely; the anchor only requires that A-SABR builds.
+[toolchain]
+channel = "1.97.1"

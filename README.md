@@ -183,17 +183,17 @@ simply skip, with a message saying how to enable them. Setting
 `SCGRAPH_REQUIRE_ANCHOR=1` turns the skip into a failure; CI does this, so the
 anchor cannot be silently lost.
 
+A-SABR is a normal pinned git dependency
+([`rust/asabr-cli/Cargo.toml`](rust/asabr-cli/Cargo.toml)); nothing is vendored
+or patched.
+
 Two caveats, both real and both worth knowing:
 
-- **A-SABR at the pinned revision does not compile on current stable Rust.**
-  Its parser builds a `[MaybeUninit<T>; N]` with `MaybeUninit::uninit().into()`,
-  which stable rustc has never accepted (rustc 1.90 rejects it with E0277).
-  `scripts/build_anchor.sh` clones upstream at a pinned revision and applies
-  [`rust/asabr-cli/patches/0001-stable-rust-uninit-array.patch`](rust/asabr-cli/patches/0001-stable-rust-uninit-array.patch),
-  three call sites rewritten to the stable uninit-array idiom. It touches
-  `parsing.rs` only; the anchor test is what shows routing is unaffected. The
-  patch belongs upstream, and until it lands this script is what makes the
-  anchor reproducible anywhere.
+- **It needs Rust ≥ 1.97** ([`rust-toolchain.toml`](rust/asabr-cli/rust-toolchain.toml)
+  pins it). A-SABR uses standard-library features stabilised up to 1.97, so on
+  an older toolchain the build fails with a wall of E0658 "use of unstable
+  library feature" errors. That reads like A-SABR is nightly-only; it is not,
+  and its CI runs on stable. `rustup update` is the fix.
 - **A-SABR's plan lexer parses numbers as `i64`.** Plans written for the
   cross-check must therefore have integer-valued attributes;
   `Realization.write_asabr` raises rather than rounding silently. Real-valued
@@ -226,7 +226,7 @@ experiments/            one runner per figure, plus _style.py (shared plot style
 scenarios/              uc1_skeleton.yaml + committed CPD plans (uc1_cpd, scale_*)
 results/                the paper's CSVs; reference/ is the verification baseline
 figures/                the paper's figures, copied into main.tex's img/
-rust/asabr-cli/         Level-0 A-SABR CLI + the stable-Rust patch
+rust/asabr-cli/         Level-0 A-SABR CLI (A-SABR is a pinned git dependency)
 scripts/                build_anchor.sh, generate_skeletons.sh, verify_results.py
 docs/                   PIPELINE.md (the §IV walkthrough), ARCHIVAL.md
 tests/                  66 tests

@@ -62,15 +62,17 @@ test:latest:
 
 anchor:
   stage: anchor
-  image: rust:1.90-slim
+  # A-SABR needs Rust >= 1.97 (rust/asabr-cli/rust-toolchain.toml). An older
+  # image fails with E0658 "unstable library feature", which looks like a
+  # nightly requirement but is just an out-of-date toolchain.
+  image: rust:1.97-slim
   before_script:
     - apt-get update -qq && apt-get install -y -qq --no-install-recommends git python3 python3-venv python3-pip
   script:
     - python3 -m venv .venv
     - .venv/bin/pip install --quiet -r requirements-repro.txt
     - .venv/bin/pip install --quiet -e . --no-deps
-    # Clones A-SABR at the pinned revision and applies the stable-Rust patch;
-    # see scripts/build_anchor.sh for why the patch is needed at all.
+    # Cargo fetches A-SABR at the pinned revision; nothing is vendored.
     - bash scripts/build_anchor.sh
     - SCGRAPH_REQUIRE_ANCHOR=1 .venv/bin/pytest tests/test_anchor.py -q
 

@@ -4,11 +4,10 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
-# Rust build output, and the A-SABR checkout that scripts/build_anchor.sh
-# creates. The pin lives in that script plus the patch beside it, so the
-# upstream crate is fetched rather than copied into this repository.
+# Rust build output. A-SABR itself is a pinned git dependency in
+# rust/asabr-cli/Cargo.toml, so Cargo fetches it into ~/.cargo and nothing
+# upstream is copied into this repository.
 rust/asabr-cli/target/
-rust/vendor/
 
 # scenarios/scale_*/ used to be ignored because the working tree is ~7 MB.
 # They are committed now: the JSON compresses to ~190 kB in the pack, which is

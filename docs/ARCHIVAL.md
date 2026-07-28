@@ -96,38 +96,39 @@ Before tagging, confirm from a fresh clone:
 - [ ] `results/*.csv` and `figures/*.{pdf,png}` are committed, so the artefact
       is inspectable without running anything.
 - [ ] `LICENSE`, `CITATION.cff`, `requirements-repro.txt` are present.
-- [ ] `rust/asabr-cli/patches/` is present. Without it the anchor cannot be
-      rebuilt by anyone.
+- [ ] `rust/asabr-cli/Cargo.toml` and `rust-toolchain.toml` are present: the
+      A-SABR pin and the minimum Rust version are the only things needed to
+      rebuild the anchor.
 
-Deliberately **not** archived: `rust/vendor/` (A-SABR is fetched at a pinned
-revision), `.venv/`, build output.
+Deliberately **not** archived: `.venv/` and build output. A-SABR is not
+vendored; Cargo fetches it at the pinned revision.
 
 ---
 
 ## The A-SABR dependency, and the risk it carries
 
-The anchor depends on an external repository at a pinned revision, plus a patch
-carried here. Two failure modes are worth naming, because an artefact is
-supposed to outlive its dependencies:
+The anchor depends on an external repository at a pinned revision
+(`1277e360f2d61a593c336c6f6eb2e583758d7580`), fetched by Cargo. Nothing is
+vendored or patched.
 
-1. **Upstream disappears or rewrites history.** The pin
-   (`1277e360f2d61a593c336c6f6eb2e583758d7580`) would stop resolving and the
-   anchor could not be rebuilt. Everything else still works: no result in the
-   paper depends on the anchor.
-2. **The patch stops applying**, if the pin is ever bumped without updating it.
+One failure mode is worth naming, because an artefact is supposed to outlive
+its dependencies: **upstream could disappear or rewrite history**, and the pin
+would stop resolving. Everything else still works — no result in the paper
+depends on the anchor, and `make reproduce` never touches it.
 
-The clean fix is to get the patch upstream. It is a small, uncontroversial
-change — three call sites moved to the stable uninit-array idiom, needed because
-`MaybeUninit::uninit().into()` has never compiled on stable Rust and rustc 1.90
-rejects it outright. **Worth opening as a PR against DTN-MTP/A-SABR.** Once
-merged, replace the clone-and-patch in `scripts/build_anchor.sh` with a plain
-git dependency on the merged revision and delete the patch.
+If that ever happens, fork A-SABR under an account you control (Inria GitLab or
+personal GitHub) and repoint the `git =` URL. Vendoring the crate into this
+repository is the last resort: it is MIT-licensed so it is permitted, but it
+copies someone else's code into a paper artefact, which is worse for both
+parties than a pinned fork.
 
-If that stalls, the fallback is to fork A-SABR under an account you control
-(Inria GitLab or personal GitHub), apply the patch on a branch, and pin that.
-Vendoring the crate into this repository is the last resort: it is
-MIT-licensed so it is permitted, but it forks someone else's code into a paper
-artefact, which is worse for both parties than a pinned fork.
+**A note on toolchain versions**, because it cost us a wrong diagnosis once.
+A-SABR uses standard-library features stabilised up to Rust 1.97. On an older
+toolchain the build fails with a long list of E0658 "use of unstable library
+feature" errors, which looks exactly like a crate that requires nightly. It is
+not: A-SABR targets stable and its CI runs on stable. `rust-toolchain.toml`
+pins the minimum so rustup reports the real problem, and `rustup update` is the
+fix. Do not patch A-SABR to work around this.
 
 ---
 
