@@ -22,8 +22,9 @@ EXPERIMENTS := uc1 uc2 uc3 ablation eps placement runtime mc_scaling
 SCHEMATICS  := scenario
 
 .PHONY: all install install-repro test anchor reproduce verify update-reference \
-        skeletons clean-figures help \
-        $(addprefix run-,$(EXPERIMENTS)) $(addprefix run-,$(SCHEMATICS))
+        skeletons clean-figures help reproduce-revision \
+        $(addprefix run-,$(EXPERIMENTS)) $(addprefix run-,$(SCHEMATICS)) \
+        $(addprefix run-,$(REVISION))
 
 help:
 	@sed -n '3,12p' Makefile | sed 's/^# \{0,1\}//'
@@ -84,6 +85,51 @@ run-mc_scaling:               ##   5 s  MC vs convolution cost against M (Sec. V
 	$(PY) experiments/run_mc_scaling.py
 run-scenario:                 ##   1 s  scenario figure: skeleton geometry + passes
 	$(PY) experiments/plot_scenario.py
+
+# ------------------------------------------------- revision (OJCOMS-07102-2026)
+#
+# New experiments added for the resubmission. They write new CSVs and figures
+# and leave the submitted ones alone; `reproduce-revision` runs them all.
+# Wall times are at 3 worker processes (SCGRAPH_WORKERS) on the machine above.
+
+REVISION := uc4 compound uc1_nonfair joint_law rucop flows misspec_timing misspec_capacity \
+            dependence estimation overhead sidecar staleness gap generality placement_uc4
+
+run-uc4:                      ## UC4 multi-hop continuum: static vs repair, joint law, compounding
+	$(PY) experiments/run_uc4.py
+run-compound:                 ## jitter compounding along a k-hop chain, isolated (R1)
+	$(PY) experiments/run_compound.py
+run-uc1_nonfair:              ## UC1 on the plan WITHOUT fair contact-plan design (R2)
+	$(PY) experiments/run_uc1.py --skeleton scenarios/uc1_raw --tag nonfair
+run-joint_law:                ## coupled-contact figure (R2: Fig. 1 coupled example)
+	$(PY) experiments/plot_joint_law.py
+run-rucop:                    ## BRUF-1 / RUCoP-N against SLA-aware routing (R2)
+	$(PY) experiments/run_rucop.py
+run-flows:                    ## concurrent bundles, residual volume, finite storage (R1, R2)
+	$(PY) experiments/run_flows.py
+run-misspec_timing:           ## heavy-tailed true timing (R2)
+	$(PY) experiments/run_misspec_timing.py
+run-misspec_capacity:         ## fade variance and inter-pass correlation (R2, R3)
+	$(PY) experiments/run_misspec_capacity.py
+run-dependence:               ## strength and structure of latent dependence (R3)
+	$(PY) experiments/run_dependence.py
+run-estimation:               ## learning the laws from n observations (R2)
+	$(PY) experiments/run_estimation.py
+run-overhead:                 ## compute re-baseline, forwarding cost, sidecar size (R1); time on an idle machine
+	SCGRAPH_WORKERS=1 $(PY) experiments/run_overhead.py
+run-sidecar:                  ## control-plane bytes and uplink time of the stochastic sidecar (R1)
+	$(PY) experiments/run_sidecar.py
+run-staleness:                ## planner information age (R1)
+	$(PY) experiments/run_staleness.py
+run-gap:                      ## candidate-set optimality gap against an exhaustive oracle (R1, R2, R3)
+	$(PY) experiments/run_gap.py
+run-generality:               ## one-at-a-time sensitivity on UC4 (R3)
+	$(PY) experiments/run_generality.py
+run-placement_uc4:            ## placement probe on the deep topology (R1)
+	$(PY) experiments/run_placement_uc4.py
+
+reproduce-revision: $(addprefix run-,$(REVISION))
+	@echo "revision experiments done."
 
 reproduce: $(addprefix run-,$(EXPERIMENTS)) $(addprefix run-,$(SCHEMATICS))
 	@echo

@@ -14,6 +14,18 @@ import numpy as np
 from scgraph.contact import DetContact, StochasticContact
 
 
+def factor_draws(contacts, m: int, rng: np.random.Generator) -> dict | None:
+    """One draw per common factor and per MC sample, shared across contacts.
+
+    Returns None when no contact loads on a factor, so routes without
+    inter-contact dependence consume exactly the same random numbers as before.
+    """
+    names = sorted({c.factor for c in contacts if c.factor is not None and c.factor_rho > 0.0})
+    if not names:
+        return None
+    return {n: rng.standard_normal(m) for n in names}
+
+
 def delivery_time(route: list[DetContact], size: float, t0: float) -> float:
     """T_pi for one realized route; inf on infeasibility (eq. 4)."""
     a = t0
@@ -50,10 +62,11 @@ def sample_route_deliveries(
         for g in list(scale_by_group):
             scale_by_group[g] = np.array([latent.states[i][1].get(g, 1.0) for i in idx])
 
+    zf = factor_draws(route, m, rng)
     a = np.full(m, t0, dtype=float)
     for c in route:
         p_scale = scale_by_group.get(c.group, 1.0) if c.group is not None else 1.0
-        exists, t_s, t_e, rate = c.sample_attrs(rng, m, p_scale=p_scale)
+        exists, t_s, t_e, rate = c.sample_attrs(rng, m, p_scale=p_scale, zf=zf)
         tau = np.maximum(a, t_s)
         e = tau + size / rate
         feasible = exists & (e <= t_e) & np.isfinite(a)
@@ -82,6 +95,9 @@ def joint_route_set_deliveries(
     else:
         idx = None
 
+    # one draw per common factor and sample, shared by every route in the set
+    zf = factor_draws([c for r in routes for c in r], m, rng)
+
     # one attribute draw per distinct contact
     draws: dict[int, tuple] = {}
     for route in routes:
@@ -94,7 +110,7 @@ def joint_route_set_deliveries(
                 )
             else:
                 p_scale = 1.0
-            draws[c.cid] = c.sample_attrs(rng, m, p_scale=p_scale)
+            draws[c.cid] = c.sample_attrs(rng, m, p_scale=p_scale, zf=zf)
 
     out = np.empty((len(routes), m), dtype=float)
     for k, route in enumerate(routes):

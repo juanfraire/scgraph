@@ -1,0 +1,431 @@
+{
+  "Flags": {
+    "Source": "CPD",
+    "LinksPropagation": "OWLT"
+  },
+  "ScenarioName": "scgraph-uc4-skeleton",
+  "Time": {
+    "SimulationStartTime": -946727957.816,
+    "SimulationEndTime": -946706357.816,
+    "Step": 10.0
+  },
+  "Star": {
+    "Name": "Sun",
+    "Radius": 696340.0,
+    "Nodes": []
+  },
+  "Planets": [
+    {
+      "Name": "Earth",
+      "Radius": 6371.0,
+      "OrbitPeriod": 31558863.596656322,
+      "SemiMajorAxis": 149600000.0,
+      "Eccentricity": 0.0167,
+      "Inclination": 0.0,
+      "Raan": 0.0,
+      "ArgOfPeriapsis": 102.9,
+      "MeanAnomaly": 357.529,
+      "Obliquity": 23.44,
+      "RotationPeriod": 0.997269632262793,
+      "Mass": 5.97219e+24,
+      "Nodes": [
+        {
+          "ID": 102,
+          "Name": "Gateway",
+          "Type": "Lander"
+        },
+        {
+          "ID": 111,
+          "Name": "TermNear",
+          "Type": "Lander"
+        },
+        {
+          "ID": 112,
+          "Name": "TermMid",
+          "Type": "Lander"
+        },
+        {
+          "ID": 113,
+          "Name": "TermFar",
+          "Type": "Lander"
+        },
+        {
+          "ID": 121,
+          "Name": "HapsNear",
+          "Type": "Lander"
+        },
+        {
+          "ID": 122,
+          "Name": "HapsMid",
+          "Type": "Lander"
+        },
+        {
+          "ID": 123,
+          "Name": "HapsFar",
+          "Type": "Lander"
+        },
+        {
+          "ID": 200,
+          "Name": "sat0_0_0",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 201,
+          "Name": "sat0_0_1",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 202,
+          "Name": "sat0_0_2",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 203,
+          "Name": "sat0_0_3",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 204,
+          "Name": "sat0_0_4",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 205,
+          "Name": "sat0_0_5",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 206,
+          "Name": "sat0_0_6",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 207,
+          "Name": "sat0_0_7",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 208,
+          "Name": "sat0_0_8",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 209,
+          "Name": "sat0_0_9",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 210,
+          "Name": "sat0_1_0",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 211,
+          "Name": "sat0_1_1",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 212,
+          "Name": "sat0_1_2",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 213,
+          "Name": "sat0_1_3",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 214,
+          "Name": "sat0_1_4",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 215,
+          "Name": "sat0_1_5",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 216,
+          "Name": "sat0_1_6",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 217,
+          "Name": "sat0_1_7",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 218,
+          "Name": "sat0_1_8",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 219,
+          "Name": "sat0_1_9",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 220,
+          "Name": "sat0_2_0",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 221,
+          "Name": "sat0_2_1",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 222,
+          "Name": "sat0_2_2",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 223,
+          "Name": "sat0_2_3",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 224,
+          "Name": "sat0_2_4",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 225,
+          "Name": "sat0_2_5",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 226,
+          "Name": "sat0_2_6",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 227,
+          "Name": "sat0_2_7",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 228,
+          "Name": "sat0_2_8",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 229,
+          "Name": "sat0_2_9",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 230,
+          "Name": "sat0_3_0",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 231,
+          "Name": "sat0_3_1",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 232,
+          "Name": "sat0_3_2",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 233,
+          "Name": "sat0_3_3",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 234,
+          "Name": "sat0_3_4",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 235,
+          "Name": "sat0_3_5",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 236,
+          "Name": "sat0_3_6",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 237,
+          "Name": "sat0_3_7",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 238,
+          "Name": "sat0_3_8",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 239,
+          "Name": "sat0_3_9",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 240,
+          "Name": "sat0_4_0",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 241,
+          "Name": "sat0_4_1",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 242,
+          "Name": "sat0_4_2",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 243,
+          "Name": "sat0_4_3",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 244,
+          "Name": "sat0_4_4",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 245,
+          "Name": "sat0_4_5",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 246,
+          "Name": "sat0_4_6",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 247,
+          "Name": "sat0_4_7",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 248,
+          "Name": "sat0_4_8",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 249,
+          "Name": "sat0_4_9",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 250,
+          "Name": "sat0_5_0",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 251,
+          "Name": "sat0_5_1",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 252,
+          "Name": "sat0_5_2",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 253,
+          "Name": "sat0_5_3",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 254,
+          "Name": "sat0_5_4",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 255,
+          "Name": "sat0_5_5",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 256,
+          "Name": "sat0_5_6",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 257,
+          "Name": "sat0_5_7",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 258,
+          "Name": "sat0_5_8",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        },
+        {
+          "ID": 259,
+          "Name": "sat0_5_9",
+          "Type": "Orbiter",
+          "OrbitPeriod": 5730.127089334606
+        }
+      ],
+      "Moons": []
+    }
+  ]
+}

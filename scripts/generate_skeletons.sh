@@ -12,7 +12,7 @@
 # Requires the Contact Plan Designer on PATH:
 #   https://gitlab.inria.fr/jfraire/contact-plan-designer
 #
-# Usage:  scripts/generate_skeletons.sh [uc1|scale|all]     (default: all)
+# Usage:  scripts/generate_skeletons.sh [uc1|scale|revision|all]     (default: all)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -61,11 +61,31 @@ gen_scale() {
   done
 }
 
+# Revision. The UC1 plan WITHOUT fair contact-plan design (cpd compute stops
+# before the design stage), so each pass serves the event site and the gateway
+# at the same time: the R2 check that the slow backbone is not an artefact of
+# single-interface fairness. And the UC4 skeletons: a 60-satellite shell with
+# in-plane and cross-plane ISLs (the multi-hop use case), plus the 40- and
+# 90-satellite variants the generality sweep uses.
+gen_revision() {
+  echo "==> uc1_raw  (UC1 scenario, no fair design)"
+  cpd compute "$SCEN/uc1_skeleton.yaml" -o "$SCEN/uc1_raw" -f ion
+  echo "==> uc4_cpd  (60 sats with ISLs)"
+  cpd run "$SCEN/uc4_skeleton.yaml" -o "$SCEN/uc4_cpd"
+  for n in 40 90; do
+    if [ -f "$SCEN/uc4_d${n}_skeleton.yaml" ]; then
+      echo "==> uc4_d${n}_cpd"
+      cpd run "$SCEN/uc4_d${n}_skeleton.yaml" -o "$SCEN/uc4_d${n}_cpd"
+    fi
+  done
+}
+
 case "$WHAT" in
-  uc1)   gen_uc1 ;;
-  scale) gen_scale ;;
-  all)   gen_uc1; gen_scale ;;
-  *)     echo "usage: $0 [uc1|scale|all]" >&2; exit 1 ;;
+  uc1)      gen_uc1 ;;
+  scale)    gen_scale ;;
+  revision) gen_revision ;;
+  all)      gen_uc1; gen_scale; gen_revision ;;
+  *)        echo "usage: $0 [uc1|scale|revision|all]" >&2; exit 1 ;;
 esac
 
 cat <<'EOF'

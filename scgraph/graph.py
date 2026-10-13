@@ -89,7 +89,35 @@ class StochasticContactGraph:
         self.contacts.append(contact)
 
     def by_id(self, cid: int) -> StochasticContact:
-        return next(c for c in self.contacts if c.cid == cid)
+        # The index is rebuilt whenever the contact list changed size, which
+        # covers add(); a linear scan was the dominant cost on large plans.
+        idx = self.__dict__.get("_index")
+        if idx is None or self.__dict__.get("_index_n") != len(self.contacts):
+            idx = {c.cid: c for c in self.contacts}
+            self.__dict__["_index"] = idx
+            self.__dict__["_index_n"] = len(self.contacts)
+        return idx[cid]
+
+    def replaced(self, contacts: list[StochasticContact]) -> "StochasticContactGraph":
+        """Same graph (nodes, horizon, latent state) over a different contact list."""
+        return StochasticContactGraph(
+            num_nodes=self.num_nodes, contacts=list(contacts),
+            horizon=self.horizon, latent=self.latent,
+        )
+
+    def window(self, t_lo: float, t_hi: float) -> "StochasticContactGraph":
+        """Contacts whose support can overlap [t_lo, t_hi], the only ones a
+        bundle released at t_lo with deadline t_hi could ever use."""
+        keep = []
+        for c in self.contacts:
+            s_lo, e_hi = c.support_window()
+            if e_hi >= t_lo and s_lo <= t_hi:
+                keep.append(c)
+        return self.replaced(keep)
+
+    def independent_twin(self) -> "StochasticContactGraph":
+        """Every contact keeps its marginals but loses its within-contact coupling."""
+        return self.replaced([c.independent_twin() for c in self.contacts])
 
     @property
     def is_point_mass(self) -> bool:
@@ -98,13 +126,45 @@ class StochasticContactGraph:
     def realize(self, rng: np.random.Generator) -> Realization:
         """Draw one deterministic contact plan (the sampler of Sec. 7.2)."""
         scales = self.latent.sample(rng) if self.latent is not None else {}
+        names = sorted({c.factor for c in self.contacts
+                        if c.factor is not None and c.factor_rho > 0.0})
+        zf = {n: rng.standard_normal(1) for n in names} if names else None
         det = []
         for c in self.contacts:
             s = scales.get(c.group, 1.0) if c.group is not None else 1.0
-            d = c.sample(rng, p_scale=s)
+            d = c.sample(rng, p_scale=s, zf=zf)
             if d is not None:
                 det.append(d)
         return Realization(self.num_nodes, det)
+
+    def realize_batch(self, rng: np.random.Generator, m: int) -> list[Realization]:
+        """m independent realizations at once (vectorised per contact).
+
+        Equivalent in law to calling `realize` m times, with the latent state
+        and every common factor drawn once per realization and shared across
+        its contacts; much faster on large graphs because each contact's laws
+        are sampled in one call. The random stream differs from m calls to
+        `realize`, so results are not draw-for-draw comparable between the two.
+        """
+        if self.latent is not None:
+            probs = [p for p, _ in self.latent.states]
+            idx = rng.choice(len(self.latent.states), size=m, p=probs)
+        else:
+            idx = None
+        names = sorted({c.factor for c in self.contacts
+                        if c.factor is not None and c.factor_rho > 0.0})
+        zf = {n: rng.standard_normal(m) for n in names} if names else None
+        per = [[] for _ in range(m)]
+        for c in self.contacts:
+            if idx is not None and c.group is not None:
+                scale = np.array([self.latent.states[i][1].get(c.group, 1.0) for i in idx])
+            else:
+                scale = 1.0
+            ex, ts, te, rate = c.sample_attrs(rng, m, p_scale=scale, zf=zf)
+            for j in np.flatnonzero(ex):
+                per[j].append(DetContact(c.cid, c.frm, c.to, float(ts[j]), float(te[j]),
+                                         float(rate[j]), c.owlt))
+        return [Realization(self.num_nodes, cl) for cl in per]
 
     def mean_plan(self, include_threshold: float = 0.5) -> Realization:
         """The nominal plan a deterministic operator would build: law means,

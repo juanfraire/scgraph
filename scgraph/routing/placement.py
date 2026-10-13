@@ -66,15 +66,18 @@ def execute(
     size: float,
     t0: float,
     choose,
+    max_hops: int = MAX_HOPS,
 ) -> float:
     """Run a forwarding policy against one realization; inf on failure.
 
     `choose(node, time, avail, used) -> DetContact | None` is the online
     decision the forwarding plane makes; the placements differ only in it.
+    `max_hops` caps the walk (the default suits the two-hop use cases; the
+    multi-hop UC4 passes a larger cap).
     """
     avail = _by_cid(real)
     node, a, used = src, t0, set()
-    for _ in range(MAX_HOPS):
+    for _ in range(max_hops):
         if node == dst:
             return a
         c = choose(node, a, avail, used)

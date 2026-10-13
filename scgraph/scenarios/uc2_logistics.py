@@ -87,6 +87,10 @@ def provisioning_cpd(
     eps: float = 0.05,
     m: int = 200_000,
     k_max: int = 40,
+    rng_eval: np.random.Generator | None = None,
+    m_eval: int | None = None,
+    cv_true: float | None = None,
+    rho_true: float = 0.0,
 ) -> dict:
     """H2 on real pass geometry: heterogeneous nominal volumes, lognormal fade.
 
@@ -96,6 +100,14 @@ def provisioning_cpd(
     Sizing the aggregate (eq. 11) is worth more here than in the homogeneous
     case, because the operator can no longer assume the next pass is as good as
     the last.
+
+    Revision. With `rng_eval`, the three plans (sized on the planner's draws
+    exactly as before) are also scored on independent draws of the TRUE fade
+    process, reported as sla_*_ho. The truth may differ from the planner's
+    belief: `cv_true` sets its coefficient of variation (fade variance
+    under-estimated when cv_true > cv), and `rho_true` correlates the passes'
+    fades through one common factor (a weather system persisting across
+    passes), which the planner, assuming independence, does not see.
     """
     nominal = cpd_pass_volumes(skeleton, gs_index)
     if nominal.size == 0:
@@ -123,7 +135,7 @@ def provisioning_cpd(
     k_wc = min(k_wc, k_max)
     k_cc = next((k for k in range(k_mean, k_max + 1) if sla(k) >= 1 - eps), k_max)
 
-    return {
+    out = {
         "k_mean": k_mean, "sla_mean": sla(k_mean),
         "k_wc": k_wc, "sla_wc": sla(k_wc),
         "k_cc": k_cc, "sla_cc": sla(k_cc),
@@ -132,3 +144,25 @@ def provisioning_cpd(
         "overhead_cc": overhead(k_cc),
         "mean_vol": mean_vol, "n_real_passes": int(nominal.size),
     }
+    if rng_eval is not None:
+        me = m_eval or m
+        csum_t = np.cumsum(seq[None, :] * true_fades(rng_eval, me, k_max, cv_true or cv,
+                                                     rho_true), axis=1)
+        for key in ("mean", "wc", "cc"):
+            k = min(max(out[f"k_{key}"], 1), k_max)
+            hits = int(np.count_nonzero(csum_t[:, k - 1] >= demand))
+            out[f"sla_{key}_ho"] = hits / me
+            out[f"fails_{key}_ho"] = me - hits
+        out["m_eval"] = me
+    return out
+
+
+def true_fades(rng: np.random.Generator, m: int, k: int, cv: float, rho: float = 0.0):
+    """(m, k) multiplicative fades, lognormal of mean 1 and CV `cv`, with the k
+    passes' log-fades correlated at `rho` through one common factor."""
+    law = LogNormal.from_mean_cv(1.0, cv)
+    s = rng.standard_normal((m, k))
+    if rho > 0.0:
+        z = rng.standard_normal((m, 1))
+        s = math.sqrt(rho) * z + math.sqrt(1.0 - rho) * s
+    return np.exp(law.mu + law.sigma * s)

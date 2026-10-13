@@ -26,6 +26,7 @@ make verify            # bit-for-bit diff against the recorded reference
 
 ## Table of contents
 
+- [Revision (OJCOMS-07102-2026)](#revision-ojcoms-07102-2026)
 - [Quick start](#quick-start)
 - [Paper → code map](#paper--code-map) (start here if you are holding the PDF)
 - [Reproducing the results](#reproducing-the-results)
@@ -33,6 +34,53 @@ make verify            # bit-for-bit diff against the recorded reference
 - [Repository layout](#repository-layout)
 - [Before you change anything](#before-you-change-anything)
 - [How to cite](#how-to-cite)
+
+---
+
+## Revision (OJCOMS-07102-2026)
+
+The submission received a Reject-Resubmit decision on 2026-10-12. Everything
+below was added for the resubmission. The submitted experiments keep their
+selection streams draw for draw, so every movement in their numbers comes from
+the one methodological change listed first. `results/reference-v1/` holds the
+CSVs of the submitted manuscript.
+
+```bash
+make reproduce            # the submitted figures, with held-out evaluation
+make reproduce-revision   # every new experiment below
+```
+
+### Method changes
+
+| Change | Why | Where |
+|---|---|---|
+| Held-out evaluation of every policy | the submitted runners scored the SLA-aware route on the draws that selected it, so its violation was optimistic and Fig. 5's "achieved <= budget" held by construction | `verify/montecarlo.py` `evaluate_route`; `run_uc1.py`, `run_eps.py`, `run_ablation.py`, `run_uc2.py` (columns `*_insample` / `*_v1` keep the old numbers) |
+| Exact confidence bounds and admission on a lower bound | "certification" is now a statement at confidence 1 - delta: a route is admitted when its Bonferroni-corrected Clopper-Pearson lower bound clears 1 - eps | `scgraph/stats.py`; `pick_route_chance(admission="lcb")` |
+| Joint law within a contact; dependence across contacts | the paper's object is a joint law; the submitted experiments exercised one coordinate at a time | `contact.py` (`corr` copula over start/duration/rate; `factor` common factor), `distributions.py` (`ppf`, `TruncStudentT`) |
+| Risk-class candidates | on a meshed backbone the default generator misses the safe route in most instances | `candidate_routes(..., risk_classes=True)`; `results/notes/gap.md` |
+| Hop-by-hop repair | a deployed CGR node re-routes when a contact fails; deep routes need that baseline | `routing/reactive.py` (`execute_reactive`, `pick_route_under_repair`) |
+| Batched realizations, graph windows | speed on large plans | `graph.py` (`realize_batch`, `window`, indexed `by_id`) |
+
+### New experiments
+
+| Reviewer request | Experiment | Outputs | Note |
+|---|---|---|---|
+| Deeper multi-hop continuum, combined facets (R1, R2, R3) | `run_uc4.py` on `scenarios/uc4_cpd` (60 satellites with ISLs) | `uc4_sigma.csv`, `uc4_margin.csv`, `uc4.pdf` | this README |
+| Jitter compounding along a route (R1) | `run_compound.py` | `compound.csv`, `compound.pdf` | |
+| Fair-design artefact (R2) | `run_uc1.py --skeleton scenarios/uc1_raw --tag nonfair` | `uc1_nonfair.csv`, `uc1_h1_nonfair.pdf` | |
+| Coupled example for Fig. 1 (R2) | `plot_joint_law.py` | `joint_law.csv`, `joint_law.pdf` | |
+| BRUF / RUCoP comparison (R2) | `run_rucop.py` (`routing/rucop.py`) | `rucop_uc1.csv`, `rucop_uc3.csv`, `rucop_tractability.csv` | `results/notes/rucop.md` |
+| Concurrent flows, residual volume, buffers (R1, R2) | `run_flows.py` (`flows.py`) | `flows_load.csv`, `flows_buffer.csv`, `flows.pdf` | `results/notes/flows.md` |
+| Misspecified laws (R2) and dependence (R2, R3) | `run_misspec_timing.py`, `run_misspec_capacity.py`, `run_dependence.py` | `robust_*.csv`, `robust_*.pdf` | `results/notes/robustness.md` |
+| Learning the laws (R2) | `run_estimation.py` | `estimation.csv`, `estimation.pdf` | `results/notes/robustness.md` |
+| Compute, forwarding cost, control plane (R1) | `run_overhead.py`, `run_sidecar.py` | `overhead_*.csv`, `overhead_compute.pdf` | `results/notes/overhead.md` |
+| Planner staleness (R1) | `run_staleness.py` | `staleness.csv`, `staleness.pdf` | `results/notes/overhead.md` |
+| Optimality gap of candidate generation (R1, R2, R3) | `run_gap.py` (`routing/enumerate.py`) | `gap_uc1*.csv`, `gap_uc4*.csv`, `gap.pdf` | `results/notes/gap.md` |
+| Generality and deep-topology placement (R1, R3) | `run_generality.py`, `run_placement_uc4.py` | `generality.csv`, `placement_uc4.csv` | `results/notes/generality.md` |
+
+New CPD plans: `scenarios/uc1_raw` (UC1 without fair design), `scenarios/uc4_cpd`
+and the density variants used by the generality sweep. `scripts/generate_skeletons.sh revision`
+regenerates them.
 
 ---
 

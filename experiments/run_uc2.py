@@ -1,5 +1,9 @@
 """H2 experiment: provisioned overhead vs fade severity (UC2).
 
+Revision: the plans are sized exactly as submitted, and the SLA each achieves
+is also measured on an independent stream (SEED + 2), as sla_*_ho, with exact
+one-sided bounds. The in-sample sla_* columns are kept for the record.
+
 Usage: python experiments/run_uc2.py
 Outputs: results/uc2.csv, figures/uc2_h2.{pdf,png}
 """
@@ -19,6 +23,7 @@ from _style import STYLE
 
 from scgraph.scenarios.uc1_event import GATEWAY, load_skeleton
 from scgraph.scenarios.uc2_logistics import provisioning_cpd
+from scgraph.stats import cp_lower
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED = 20260709
@@ -28,6 +33,7 @@ def main():
     t_start = time.time()
     _style.setup()
     rng = np.random.default_rng(SEED)
+    rng_e = np.random.default_rng(SEED + 2)   # held-out evaluation stream
 
     # nominal pass volumes come from the CPD skeleton's real downlink passes at
     # the gateway, so they are heterogeneous for a geometric reason before any
@@ -38,12 +44,15 @@ def main():
     cvs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
     rows = []
     for cv in cvs:
-        r = provisioning_cpd(rng, skeleton, gs, n_passes, cv, eps=eps)
+        r = provisioning_cpd(rng, skeleton, gs, n_passes, cv, eps=eps, rng_eval=rng_e)
         r["cv"] = cv
+        for key in ("mean", "wc", "cc"):
+            r[f"sla_{key}_lcb"] = cp_lower(r["m_eval"] - r[f"fails_{key}_ho"], r["m_eval"], 0.05)
         rows.append(r)
         print(
-            f"cv={cv:.1f}  k_mean={r['k_mean']} (SLA {r['sla_mean']:.2f})"
-            f"  k_cc={r['k_cc']} (SLA {r['sla_cc']:.2f})  k_wc={r['k_wc']}"
+            f"cv={cv:.1f}  k_mean={r['k_mean']} (SLA ho {r['sla_mean_ho']:.4f})"
+            f"  k_cc={r['k_cc']} (SLA ho {r['sla_cc_ho']:.4f}, lcb {r['sla_cc_lcb']:.4f})"
+            f"  k_wc={r['k_wc']} (SLA ho {r['sla_wc_ho']:.4f})"
         )
 
     (ROOT / "results").mkdir(exist_ok=True)

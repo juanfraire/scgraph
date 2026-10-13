@@ -17,6 +17,7 @@ from scgraph.arrival import sample_route_deliveries
 from scgraph.contact import StochasticContact
 from scgraph.graph import StochasticContactGraph
 from scgraph.routing.deterministic import cgr_route
+from scgraph.stats import cp_lower
 
 
 def candidate_routes(
@@ -27,8 +28,20 @@ def candidate_routes(
     t0: float,
     rng: np.random.Generator,
     n_realizations: int = 40,
+    risk_classes: bool = False,
 ) -> list[list[StochasticContact]]:
-    """Candidate route set: mean-plan route + optimal routes of sampled realizations."""
+    """Candidate route set: mean-plan route + optimal routes of sampled realizations.
+
+    `risk_classes` (revision) appends, for each class of uncertain contacts
+    (random existence, random timing, both), the mean-plan route that avoids
+    the whole class, plus its single-contact exclusions. It reaches the slow,
+    certain route that shares contacts with the fast risky ones, which the
+    disjoint sweep cannot reach on a meshed backbone (results/notes/gap.md:
+    on UC4 it lifts the share of instances whose best route is offered from
+    25% to 95%). The routes are deterministic searches appended after the
+    others, so they consume no random numbers; off by default, which keeps
+    the submitted use cases draw-for-draw unchanged.
+    """
     seen: dict[tuple[int, ...], list[StochasticContact]] = {}
 
     def add(det_route):
@@ -63,6 +76,19 @@ def candidate_routes(
     for _ in range(n_realizations):
         r, _ = cgr_route(graph.realize(rng), src, dst, size, t0)
         add(r)
+    if risk_classes:
+        unc_exist = frozenset(c.cid for c in graph.contacts if c.p_exist < 1.0)
+        unc_time = frozenset(c.cid for c in graph.contacts
+                             if not (c.start.is_point_mass and c.duration.is_point_mass))
+        for excl in (unc_exist, unc_time, unc_exist | unc_time):
+            r, _ = cgr_route(mean_plan, src, dst, size, t0, excluded_cids=excl)
+            if r is None:
+                continue
+            add(r)
+            for c in r:
+                alt, _ = cgr_route(mean_plan, src, dst, size, t0,
+                                   excluded_cids=excl | {c.cid})
+                add(alt)
     return list(seen.values())
 
 
@@ -75,13 +101,23 @@ def route_stats(
     rng: np.random.Generator,
     eps: float = 0.05,
     latent=None,
+    delta: float = 0.05,
 ) -> dict:
-    """P[T<=D] (eq. 5) and Q_{1-eps} (eq. 8) for one route, by Monte Carlo."""
+    """P[T<=D] (eq. 5) and Q_{1-eps} (eq. 8) for one route, by Monte Carlo.
+
+    Besides the point estimate, returns the success count `k` out of `n` draws
+    and the one-sided (1 - delta) Clopper-Pearson lower bound `p_lcb`, which is
+    what an admission decision should rest on (revision, R2/R3).
+    """
     t = sample_route_deliveries(route, size, t0, m, rng, latent=latent)
-    p = float(np.mean(t <= deadline))
+    k = int(np.count_nonzero(t <= deadline))
+    p = k / m
     q = float(np.quantile(t, 1.0 - eps)) if np.isfinite(t).mean() >= 1.0 - eps else math.inf
     return {
-        "p_success": p,
+        "p_success": float(p),
+        "k": k,
+        "n": int(m),
+        "p_lcb": cp_lower(k, m, delta),
         "quantile": q,
         "mean_delivery": float(np.mean(t[np.isfinite(t)])) if np.isfinite(t).any() else math.inf,
         "samples": t,
@@ -99,9 +135,17 @@ def pick_route(
     m: int = 2000,
     eps: float = 0.05,
     n_realizations: int = 40,
+    cands: list[list[StochasticContact]] | None = None,
 ) -> tuple[list[StochasticContact] | None, dict]:
-    """The SLA-aware router: argmax P[T<=D] over the candidate set (eq. 6)."""
-    cands = candidate_routes(graph, src, dst, size, t0, rng, n_realizations)
+    """The SLA-aware router: argmax P[T<=D] over the candidate set (eq. 6).
+
+    The returned statistics come from the draws used to select the route, so
+    they are optimistic by construction (the winner of a noisy comparison).
+    Report a route's performance with `verify.montecarlo.evaluate_route` on
+    an independent stream instead.
+    """
+    if cands is None:
+        cands = candidate_routes(graph, src, dst, size, t0, rng, n_realizations)
     best, best_stats = None, {"p_success": -1.0}
     for route in cands:
         s = route_stats(route, size, t0, deadline, m, rng, eps=eps, latent=graph.latent)
@@ -126,11 +170,26 @@ def pick_route_chance(
     m: int = 2000,
     eps: float = 0.05,
     n_realizations: int = 40,
+    admission: str = "lcb",
+    delta: float = 0.05,
+    cands: list[list[StochasticContact]] | None = None,
 ) -> tuple[list[StochasticContact] | None, dict]:
     """The chance-constrained form (eq. 7): minimise latency s.t. P[T<=D] >= 1-eps.
 
     Admissibility is tested on P[T<=D] directly, not on Q_{1-eps}; eq. (9) is the
     equivalence that lets us do that.
+
+    `admission` sets what "meets the SLA" means for a candidate scored on m
+    draws:
+      "point"  the estimate k/m clears 1 - eps (the original rule). Selecting
+               the fastest admitted route then favours candidates whose
+               estimate happened to come out high, so the admitted route can
+               sit above budget once measured on fresh draws.
+      "lcb"    the one-sided Clopper-Pearson lower bound clears 1 - eps, at
+               level delta / |candidates| (Bonferroni). Under the model, the
+               probability that ANY admitted route truly violates the budget
+               is then at most delta. This is the statement the paper calls
+               SLA admission at confidence 1 - delta.
 
     This is where epsilon earns its keep. Tightening it forces the router onto
     slower, safer routes; loosening it lets the router spend reliability to buy
@@ -138,19 +197,26 @@ def pick_route_chance(
     infeasible, and we fall back to argmax P[T<=D] so the router still returns
     its best effort (and the caller can see the constraint was not met).
     """
-    cands = candidate_routes(graph, src, dst, size, t0, rng, n_realizations)
+    if cands is None:
+        cands = candidate_routes(graph, src, dst, size, t0, rng, n_realizations)
     scored = [
         (r, route_stats(r, size, t0, deadline, m, rng, eps=eps, latent=graph.latent))
         for r in cands
     ]
     if not scored:
-        return None, {"p_success": 0.0, "feasible": False}
+        return None, {"p_success": 0.0, "feasible": False, "n_candidates": 0}
 
-    ok = [(r, s) for r, s in scored if s["p_success"] >= 1.0 - eps - 1e-12]
+    if admission == "point":
+        ok = [(r, s) for r, s in scored if s["p_success"] >= 1.0 - eps - 1e-12]
+    elif admission == "lcb":
+        d = delta / len(scored)
+        ok = [(r, s) for r, s in scored if cp_lower(s["k"], s["n"], d) >= 1.0 - eps]
+    else:
+        raise ValueError(f"unknown admission rule {admission!r}")
     if ok:
         route, stats = min(ok, key=lambda rs: rs[1].get("mean_delivery", math.inf))
-        stats = {**stats, "feasible": True}
+        stats = {**stats, "feasible": True, "n_candidates": len(scored)}
         return route, stats
 
     route, stats = max(scored, key=lambda rs: rs[1]["p_success"])
-    return route, {**stats, "feasible": False}
+    return route, {**stats, "feasible": False, "n_candidates": len(scored)}

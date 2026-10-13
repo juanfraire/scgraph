@@ -1,0 +1,105 @@
+# UC4 space skeleton: the deterministic orbital backbone for the multi-hop
+# continuum use case (revision, OJCOMS-07102-2026).
+#
+# A Walker-Delta LEO shell WITH inter-satellite links (in-plane ring plus
+# cross-plane links to the adjacent plane), three remote terminals at
+# increasing distance from a single gateway, and one stratospheric platform
+# (HAPS, 20 km) near each terminal. The far terminal (Dakar, ~4200 km from the
+# gateway) can only reach it through the ISL mesh, so end-to-end routes span
+# 4 to 8 hops once the air layer is injected on top:
+#
+#   terminal -> UAV -> HAPS -> sat -> (ISL ...) -> sat -> gateway
+#
+# Satellites are multi-interface (ISLs + feeder) and the gateway has two
+# antennas, so this plan does not inherit the single-interface fairness
+# artefact of the UC1 skeleton.
+#
+# Regenerate with:
+#   cpd run scenarios/uc4_skeleton.yaml -o scenarios/uc4_cpd
+name: scgraph-uc4-skeleton
+epoch-s: 0.0
+duration-s: 21600.0      # 6 h
+step-s: 10.0
+
+constellations:
+  - code: "D:550:53:60/6/1"        # 60 sats, 6 planes of 10, 550 km, 53 deg
+    central-body: Earth
+    base-id: 200
+    name-prefix: sat
+    data-rate-bps: 10
+    max-interfaces: 6
+    constraints: { max-range-km: 5000 }
+    link-patterns:
+      - rank-offset: 1             # in-plane ring
+      - plane-offset: 1            # cross-plane link to the adjacent plane
+
+nodes:
+  - id: 102
+    name: Gateway                  # Paris
+    type: lander
+    central-body: Earth
+    latitude-deg: 48.85
+    longitude-deg: 2.35
+    data-rate-bps: 10
+    max-interfaces: 2
+    constraints: { min-elevation-deg: 10 }
+
+  - id: 111
+    name: TermNear                 # Barcelona, ~830 km
+    type: lander
+    central-body: Earth
+    latitude-deg: 41.39
+    longitude-deg: 2.17
+    data-rate-bps: 10
+    constraints: { min-elevation-deg: 10 }
+
+  - id: 112
+    name: TermMid                  # Rabat, ~1800 km
+    type: lander
+    central-body: Earth
+    latitude-deg: 34.02
+    longitude-deg: -6.84
+    data-rate-bps: 10
+    constraints: { min-elevation-deg: 10 }
+
+  - id: 113
+    name: TermFar                  # Dakar, ~4200 km
+    type: lander
+    central-body: Earth
+    latitude-deg: 14.69
+    longitude-deg: -17.44
+    data-rate-bps: 10
+    constraints: { min-elevation-deg: 10 }
+
+  - id: 121
+    name: HapsNear
+    type: lander
+    central-body: Earth
+    latitude-deg: 41.39
+    longitude-deg: 2.70
+    altitude-m: 20000.0
+    data-rate-bps: 10
+    max-interfaces: 2
+    constraints: { min-elevation-deg: 5 }
+
+  - id: 122
+    name: HapsMid
+    type: lander
+    central-body: Earth
+    latitude-deg: 34.02
+    longitude-deg: -6.30
+    altitude-m: 20000.0
+    data-rate-bps: 10
+    max-interfaces: 2
+    constraints: { min-elevation-deg: 5 }
+
+  - id: 123
+    name: HapsFar
+    type: lander
+    central-body: Earth
+    latitude-deg: 14.69
+    longitude-deg: -16.90
+    altitude-m: 20000.0
+    data-rate-bps: 10
+    max-interfaces: 2
+    constraints: { min-elevation-deg: 5 }

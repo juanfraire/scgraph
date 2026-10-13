@@ -14,3 +14,4 @@ rust/asabr-cli/target/
 # a small price for making experiments/run_runtime.py reproducible from a bare
 # clone. Regenerate them with scripts/generate_skeletons.sh if the scenario
 # changes.
+logs/
