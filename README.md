@@ -43,7 +43,10 @@ The submission received a Reject-Resubmit decision on 2026-10-12. Everything
 below was added for the resubmission. The submitted experiments keep their
 selection streams draw for draw, so every movement in their numbers comes from
 the one methodological change listed first. `results/reference-v1/` holds the
-CSVs of the submitted manuscript.
+CSVs of the submitted manuscript. The resubmitted paper is condensed; the full
+text, figures, and tables of every study it summarises are in the supplementary
+report [`docs/supplement.pdf`](docs/supplement.pdf) (Sections S1 to S10, built
+from `supplement.tex` in the paper repository).
 
 ```bash
 make reproduce            # the submitted figures, with held-out evaluation

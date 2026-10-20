@@ -519,6 +519,35 @@ def plot_uc3(rows):
     _style.save(fig, str(ROOT / "figures" / "rucop_uc3"))
 
 
+def plot_uc3_paper(rows):
+    """Single-column version for the paper: achieved delivery against RUCoP's own value."""
+    import matplotlib.pyplot as plt
+
+    pol = [r for r in rows if r["kind"] == "policy"]
+    rhos = sorted({r["rho"] for r in pol})
+
+    def series(k, key="delivery"):
+        return [next(r for r in pol if r["rho"] == x and r["policy"] == k)[key] for x in rhos]
+
+    fig, ax = plt.subplots(figsize=(3.6, 2.1))
+    ax.plot(rhos, series("oracle"), color=COL_BOUND, linestyle=":",
+            label="oracle (sees the realisation)")
+    ax.plot(rhos, series("rucop2@10", "model_pred_mean"), color=MDP_SHADES[3], linestyle=":",
+            marker="^", mfc="white", label=r"RUCoP-2 own estimate, $\Delta$=10 s")
+    ax.plot(rhos, series("rucop2@30", "model_pred_mean"), color=COL_MDP, linestyle="--",
+            marker="o", mfc="white", label=r"RUCoP-2 own estimate, $\Delta$=30 s")
+    ax.plot(rhos, series("rucop2@30"), color=COL_MDP, marker="o",
+            label=r"RUCoP-2 achieved, $\Delta$=30 s")
+    ax.plot(rhos, series("scg"), color=COL_SCG, marker="o", label="SCG, correlation-aware")
+    ax.plot(rhos, series("naive"), color=COL_BASE2, linestyle="--", marker="s",
+            label="naive = probabilistic CGR")
+    ax.set_xlabel(r"collapse severity $\rho$")
+    ax.set_ylabel("delivery ratio by deadline")
+    ax.set_ylim(0, 1.03)
+    ax.legend(loc="lower left", handlelength=2.2, labelspacing=0.25)
+    _style.save(fig, str(ROOT / "figures" / "rucop_paper"))
+
+
 # --------------------------------------------------------------------------
 # (c) tractability
 # --------------------------------------------------------------------------
@@ -722,6 +751,7 @@ def main():
         if not replot:
             _write("rucop_uc3.csv", rows)
         plot_uc3(rows)
+        plot_uc3_paper(rows)
         print(f"(b) UC3 done in {time.time() - t:.0f}s")
     if part in (None, "tract"):
         t = time.time()
