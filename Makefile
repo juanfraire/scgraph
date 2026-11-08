@@ -131,6 +131,26 @@ run-placement_uc4:            ## placement probe on the deep topology (R1)
 reproduce-revision: $(addprefix run-,$(REVISION))
 	@echo "revision experiments done."
 
+# ------------------------------- second revision (OJCOMS-07573-2026.R1, R1.1-R1.5)
+#
+# Reviewer 1's mandatory-revision points. Same instances as Fig. 9 (UC4) and
+# Fig. 10 (UC3). The cluster runs used scripts/run_r1_g5k.sh on one node.
+
+REVISION2 := r1_admission r1_bernoulli r1_uc3grid r1_repair
+
+run-r1_admission:             ## UC4 admission at eps 0.05/0.10/0.20, admitted vs best effort (R1.2)
+	$(PY) experiments/run_r1_admission.py
+run-r1_bernoulli:             ## UC4 Bernoulli corner: slot rule, chaining, duration-aware slots (R1.3)
+	$(PY) experiments/run_r1_bernoulli.py
+	$(PY) experiments/run_r1_bernoulli.py --uc1
+run-r1_uc3grid:               ## UC3 Bernoulli corner across slot widths: dependence is not recovered (R1.4)
+	$(PY) experiments/run_r1_uc3grid.py
+run-r1_repair:                ## onboard cost of hop-by-hop repair, offline repair-aware selection (R1.5); idle machine
+	SCGRAPH_WORKERS=1 $(PY) experiments/run_r1_repair.py
+
+reproduce-revision2: $(addprefix run-,$(REVISION2))
+	@echo "second-revision experiments done."
+
 reproduce: $(addprefix run-,$(EXPERIMENTS)) $(addprefix run-,$(SCHEMATICS))
 	@echo
 	@echo "all experiments done. figures/ now holds the paper's img/ contents."
