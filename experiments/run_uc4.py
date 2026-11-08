@@ -251,7 +251,13 @@ def main():
 
     import matplotlib.pyplot as plt
 
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.6))
+    dur = ROOT / "results" / "r1_bernoulli_instances.csv"
+    if dur.exists():
+        # four series in (a): a wider figure (placed at \textwidth, same printed
+        # font size) gives three equal panels room for (a)'s legend
+        fig, axes = plt.subplots(1, 3, figsize=(8.2, 2.6))
+    else:
+        fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.6))
     sty = {
         "det": dict(STYLE["base1"], label="CGR"),
         "bern": dict(color="#7b4fa8", linestyle="-.", marker="^",
@@ -266,11 +272,28 @@ def main():
     for k in ("bern", "det", "scg"):
         ax.errorbar(x, [r[f"{k}_viol"] for r in rows_s], yerr=[r[f"{k}_ci"] for r in rows_s],
                     capsize=2, **sty[k])
+    # second revision (R1.3): the Bernoulli corner with duration-aware slot bookkeeping,
+    # same instances (run_r1_bernoulli.py), when its results are present
+    if dur.exists():
+        with open(dur) as f:
+            inst = [r for r in csv.DictReader(f) if r["sweep"] == "sigma"]
+        xs = sorted({float(r["sigma"]) for r in inst})
+        v = [[float(r["dur@10_viol"]) for r in inst if float(r["sigma"]) == s] for s in xs]
+        ax.errorbar(xs, [float(np.mean(a)) for a in v], yerr=[ci(a) for a in v], capsize=2,
+                    color="#7b4fa8", linestyle=":", marker="^", mfc="white",
+                    label=r"duration-aware TEG")
     ax.set_xlabel(r"UAV timing jitter $\sigma$ [s]")
     ax.set_ylabel("SLA-violation rate")
     ax.set_title("(a) committed source routes", fontsize=7)
-    ax.set_ylim(0, 1.0)
-    ax.legend(loc="upper left", fontsize=5.5, bbox_to_anchor=(0.0, 0.57), handlelength=2.2)
+    if dur.exists():
+        # four series: the legend sits in a band above the curves
+        ax.set_ylim(0, 1.32)
+        ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        ax.legend(loc="upper right", fontsize=5.2, ncol=2, handlelength=1.5,
+                  handletextpad=0.4, columnspacing=0.6, borderaxespad=0.2)
+    else:
+        ax.set_ylim(0, 1.0)
+        ax.legend(loc="upper left", fontsize=5.5, bbox_to_anchor=(0.0, 0.57), handlelength=2.2)
     ax = axes[1]
     for k in ("cgr_react", "scg_policy"):
         ax.errorbar(x, [r[f"{k}_viol"] for r in rows_s], yerr=[r[f"{k}_ci"] for r in rows_s],

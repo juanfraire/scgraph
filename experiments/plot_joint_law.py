@@ -52,11 +52,13 @@ def main():
     m_plot, m_stat = 1500, 400_000
     import matplotlib.pyplot as plt
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.7), sharex=True, sharey=True)
+    # one column of the paper at the common print scale (about 0.85): 4 in wide
+    fig, axes = plt.subplots(1, 2, figsize=(3.9, 2.5), sharex=True, sharey=True,
+                             layout="constrained")
     rows = []
     vmax = None
-    for ax, couple, title in ((axes[0], True, "joint law (coupled)"),
-                              (axes[1], False, "same marginals, independent")):
+    for ax, couple, title in ((axes[0], True, "joint law"),
+                              (axes[1], False, "independent twin")):
         ts, te, rate = draws(couple, m_stat, rng)
         ok = carries(ts, te, rate)
         rows.append({
@@ -73,13 +75,14 @@ def main():
         sc = ax.scatter(ts, te, c=vol, s=3, cmap="viridis", vmin=0, vmax=vmax,
                         linewidths=0, alpha=0.8)
         ax.plot([-150, 200], [-150, 200], color="#999999", lw=0.6, ls=":")
-        ax.set_title(f"{title}\nP[window carries the bundle] = {rows[-1]['p_carries']:.3f}",
-                     fontsize=7)
-        ax.set_xlabel(r"window start $T_s$ [s from nominal]")
+        ax.set_title(f"{title}\nP[carries] = {rows[-1]['p_carries']:.3f}", fontsize=7)
         ax.set_xlim(-150, 150)
         ax.set_ylim(-80, 230)
+        ax.set_xticks([-100, 0, 100])
     axes[0].set_ylabel(r"window end $T_e$ [s]")
-    cb = fig.colorbar(sc, ax=axes, shrink=0.85, pad=0.01)
+    fig.supxlabel(r"window start $T_s$ [s from nominal]", fontsize=8)
+    cb = fig.colorbar(sc, ax=axes, shrink=0.85, pad=0.02)
+    cb.set_ticks([0, 500, 1000, 1500])
     cb.set_label(r"deliverable volume $R\,(T_e-T_s)$", fontsize=7)
     fig.savefig(str(ROOT / "figures" / "joint_law.pdf"), bbox_inches="tight")
     fig.savefig(str(ROOT / "figures" / "joint_law.png"), bbox_inches="tight", dpi=300)

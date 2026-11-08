@@ -529,7 +529,7 @@ def plot_uc3_paper(rows):
     def series(k, key="delivery"):
         return [next(r for r in pol if r["rho"] == x and r["policy"] == k)[key] for x in rhos]
 
-    fig, ax = plt.subplots(figsize=(3.6, 2.1))
+    fig, ax = plt.subplots(figsize=(3.6, 2.6))   # same printed height as Fig. 9
     ax.plot(rhos, series("oracle"), color=COL_BOUND, linestyle=":",
             label="oracle (sees the realisation)")
     ax.plot(rhos, series("rucop2@10", "model_pred_mean"), color=MDP_SHADES[3], linestyle=":",
