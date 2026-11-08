@@ -19,13 +19,18 @@ objective of that line. The chosen route is afterwards evaluated under the FULL
 laws, exactly like every other policy, so the comparison isolates what the
 coarse model costs at routing time.
 
-As the slot width goes to zero the projection retains more of eq. (1) and the
-policy converges toward the SLA-aware one: that convergence is the subsumption
-claim of Sec. III-A, measured.
+As the slot width goes to zero the projection retains more of the timing in
+eq. (1), and on independent contacts the policy converges toward the SLA-aware
+one (the ablation of Sec. VII-C). It cannot converge in general: which
+contacts fail together is discarded at every slot width, so a finer grid does
+not give back correlated failure (run_r1_uc3grid.py), and with the published
+one-slot-per-hop rule a grid finer than a hop's transfer time books contacts
+the bundle reaches too late (run_r1_bernoulli.py; see `advance`).
 """
 
 from __future__ import annotations
 
+import bisect
 import heapq
 import math
 
@@ -117,12 +122,22 @@ def bernoulli_route(
     rng: np.random.Generator,
     m: int = 4000,
     q: dict[int, np.ndarray] | None = None,
+    advance: int | dict[int, int] = 1,
 ) -> tuple[list[StochasticContact] | None, float]:
     """Max expected-delivery-probability route in the slotted Bernoulli model.
 
     One hop per slot (the abstraction assumes a slot is wide enough to carry a
     bundle), independent per-slot existence, product objective. Dijkstra on
     -log q over states (node, slot).
+
+    `advance` (revision 2, R1.3) sets how many slots a hop takes: a hop over
+    contact c taken in slot j lands in slot j + advance (an int for every
+    contact, or a per-contact {cid: slots} map). The default 1 is the
+    published rule, the one BRUF and RUCoP use. 0 chains any number of hops
+    inside one slot, each tested as if offered at the slot boundary (an
+    optimistic reading). A map such as ceil(transfer / Delta) makes the slot
+    bookkeeping follow the hop's duration, which the default does not do when
+    a transfer is longer than a slot.
 
     Returns (route as stochastic contacts, the model's own predicted success
     probability). That prediction is the coarse model's belief, not a claim
@@ -131,10 +146,17 @@ def bernoulli_route(
     n_slots = max(1, int(math.ceil((deadline - t0) / slot_width)))
     if q is None:
         q = bernoulli_projection(graph, n_slots, slot_width, size, m, rng, t0=t0)
+    def land(cid: int) -> int:
+        return advance.get(cid, 1) if isinstance(advance, dict) else advance
 
     outgoing: dict[int, list[StochasticContact]] = {}
     for c in graph.contacts:
         outgoing.setdefault(c.frm, []).append(c)
+    # usable slots per contact, ascending: the search visits exactly the
+    # (contact, slot) pairs with q above the floor, in the same order as a
+    # scan over every slot would, so routes are unchanged and long grids stay
+    # tractable on large plans
+    usable = {cid: np.flatnonzero(v > Q_FLOOR) for cid, v in q.items()}
 
     start = (src, 0)
     best: dict[tuple[int, int], float] = {start: 0.0}
@@ -151,12 +173,14 @@ def bernoulli_route(
             break
         for c in outgoing.get(u, []):
             qc = q[c.cid]
+            js = usable[c.cid]
             # the hop may be taken in any slot at or after the current one
-            for j in range(k, n_slots):
+            for j in js[bisect.bisect_left(js, k):]:
+                j = int(j)
+                if j >= n_slots:
+                    break
                 qj = qc[j]
-                if qj <= Q_FLOOR:
-                    continue
-                nxt = (c.to, j + 1)
+                nxt = (c.to, j + land(c.cid))
                 if nxt[1] > n_slots:
                     continue
                 cand = cost - math.log(qj)
