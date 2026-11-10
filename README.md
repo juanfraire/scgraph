@@ -2,10 +2,17 @@
 
 Companion library and reproduction artefact for
 
-> J. A. Fraire, I. Guérin Lassous, T. Begin, E. Lavinal,
+> J. A. Fraire, T. Begin, E. Lavinal, I. Guérin Lassous,
 > "Stochastic Contact Graphs: Rethinking the Contact Plan for the 6G
 > Space-Air-Ground Continuum", IEEE Open Journal of the Communications
-> Society, Special Issue on Delay-Tolerant Networking for 6G (under review).
+> Society, Special Issue on Delay-Tolerant Networking for 6G
+> (accepted 9 November 2026, to appear).
+
+The canonical repository is
+[gitlab.inria.fr/jfraire/scgraph](https://gitlab.inria.fr/jfraire/scgraph).
+[github.com/juanfraire/scgraph](https://github.com/juanfraire/scgraph) is a
+read-only mirror that feeds the Zenodo archive; open issues and merge requests
+on GitLab.
 
 The paper generalises the DTN contact plan so that each contact carries a joint
 law over its start time, end time and capacity, and turns routing into a
@@ -14,12 +21,17 @@ masses) and the discrete on/off "uncertain DTN" model (a Bernoulli marginal)
 are corners of that object. This repository implements the object, both
 corners, and every measurement the paper reports.
 
-Everything in the paper regenerates with one command, in about 11 minutes:
+Every figure and number in the accepted paper regenerates from this
+repository. The core experiments take about 11 minutes and are checked bit for
+bit against a recorded reference; the experiments added during the two review
+rounds take longer and are listed in the [paper → code map](#paper--code-map).
 
 ```bash
-make install-repro     # pinned dependency versions
-make reproduce         # 9 CSVs, and all 7 of the paper's result figures
-make verify            # bit-for-bit diff against the recorded reference
+make install-repro          # pinned dependency versions
+make reproduce              # Figs. 4-8, the placement probe, the Monte Carlo cost study (~11 min)
+make verify                 # bit-for-bit diff against the recorded reference
+make reproduce-revision     # Figs. 2, 9, 10, 11 and the studies of Sections VII-I to VII-N
+make reproduce-revision2    # the numbers added in the mandatory revision (R1.1-R1.5)
 ```
 
 ---
@@ -105,61 +117,69 @@ Designer install, because the orbital skeletons are committed.
 
 ## Paper → code map
 
-Every equation, figure and hypothesis, and where it lives.
+Every equation, figure and hypothesis, and where it lives. Numbers follow the
+accepted paper (OJCOMS-07573-2026.R1).
 
 ### Equations
 
 | Eq. | Paper, what it says | Implemented in | Exercised by |
 |---|---|---|---|
 | (1) | The stochastic contact: joint law over $(T_s, T_e, V)$, possibly defective | [`scgraph/contact.py`](scgraph/contact.py) `StochasticContact`; laws in [`scgraph/distributions.py`](scgraph/distributions.py) | [`tests/test_distributions.py`](tests/test_distributions.py) |
-| (2) | $\tau_i=\max(A_{i-1}, T_s^{c_i})$, transmission may start | [`scgraph/arrival.py:21`](scgraph/arrival.py#L21) (scalar), [`:57`](scgraph/arrival.py#L57) (vectorised) | [`tests/test_arrival.py`](tests/test_arrival.py) |
-| (3) | $E_i$, completion when cumulative volume reaches $\omega_m$ | [`scgraph/arrival.py:22`](scgraph/arrival.py#L22) | [`tests/test_arrival.py`](tests/test_arrival.py) |
-| (4) | $A_i=E_i+\ell_{c_i}$, $\mathsf{T}_\pi=A_k$; $\infty$ on infeasibility | [`scgraph/arrival.py:17`](scgraph/arrival.py#L17) `delivery_time`, [`:25`](scgraph/arrival.py#L25) | [`tests/test_arrival.py`](tests/test_arrival.py) |
-| (5) | $S_\pi(m)$, $P_{\mathrm{succ}}(\pi,m)=\Pr[\mathsf{T}_\pi\le D_m]$ | [`scgraph/routing/quantile.py:69`](scgraph/routing/quantile.py#L69) `route_stats` | [`tests/test_quantile.py`](tests/test_quantile.py) |
-| (6) | $\pi^\star=\arg\max_\pi \Pr[\mathsf{T}_\pi\le D_m]$ | [`scgraph/routing/quantile.py:91`](scgraph/routing/quantile.py#L91) `pick_route` | UC1, UC3, ablation |
-| (7) | Chance-constrained form: $\min \mathrm{cost}$ s.t. $\Pr\ge 1-\varepsilon$ | [`scgraph/routing/quantile.py:118`](scgraph/routing/quantile.py#L118) `pick_route_chance` | $\varepsilon$-sweep (Fig. 5) |
-| (8) | $Q_{1-\varepsilon}(\pi,m)$, the quantile delivery time | [`quantile.py:82`](scgraph/routing/quantile.py#L82) (MC); [`scgraph/analytic.py:76`](scgraph/analytic.py#L76) `route_quantile` (convolution) | [`tests/test_quantile.py`](tests/test_quantile.py); the two agree within CI |
-| (9) | $\Pr\ge 1-\varepsilon \iff Q_{1-\varepsilon}\le D_m$ | the equivalence `pick_route_chance` relies on: it filters on $P_{\mathrm{succ}}$ and minimises latency | Fig. 5 (left) measures this claim |
+| (2) | $\tau_i=\max(A_{i-1}, T_s^{c_i})$, transmission may start | [`scgraph/arrival.py:33`](scgraph/arrival.py#L33) (scalar), [`:70`](scgraph/arrival.py#L70) (vectorised) | [`tests/test_arrival.py`](tests/test_arrival.py) |
+| (3) | $E_i$, completion when cumulative volume reaches $\omega_m$ | [`scgraph/arrival.py:34`](scgraph/arrival.py#L34) | [`tests/test_arrival.py`](tests/test_arrival.py) |
+| (4) | $A_i=E_i+\ell_{c_i}$, $\mathsf{T}_\pi=A_k$; $\infty$ on infeasibility | [`scgraph/arrival.py:29`](scgraph/arrival.py#L29) `delivery_time`, [`:37`](scgraph/arrival.py#L37) | [`tests/test_arrival.py`](tests/test_arrival.py) |
+| (5) | $S_\pi(m)$, $P_{\mathrm{succ}}(\pi,m)=\Pr[\mathsf{T}_\pi\le D_m]$ | [`scgraph/routing/quantile.py:95`](scgraph/routing/quantile.py#L95) `route_stats` | [`tests/test_quantile.py`](tests/test_quantile.py) |
+| (6) | $\pi^\star=\arg\max_\pi \Pr[\mathsf{T}_\pi\le D_m]$ | [`scgraph/routing/quantile.py:127`](scgraph/routing/quantile.py#L127) `pick_route` | UC1, UC3, UC4, ablation |
+| (7) | Chance-constrained form: $\min \mathrm{cost}$ s.t. $\Pr\ge 1-\varepsilon$ | [`scgraph/routing/quantile.py:162`](scgraph/routing/quantile.py#L162) `pick_route_chance` | $\varepsilon$-sweep (Fig. 6) |
+| (8) | $Q_{1-\varepsilon}(\pi,m)$, the quantile delivery time | [`quantile.py:115`](scgraph/routing/quantile.py#L115) (MC); [`scgraph/analytic.py:76`](scgraph/analytic.py#L76) `route_quantile` (convolution) | [`tests/test_quantile.py`](tests/test_quantile.py); the two agree within CI |
+| (9) | $\Pr\ge 1-\varepsilon \iff Q_{1-\varepsilon}\le D_m$ | the equivalence `pick_route_chance` relies on: it filters on $P_{\mathrm{succ}}$ and minimises latency | Fig. 6 (left) measures this claim |
 | (10) | $\mathrm{cost}_\varepsilon(\pi,m)=Q_{1-\varepsilon}$, the SABR drop-in key | [`quantile.py`](scgraph/routing/quantile.py) `route_stats["quantile"]` | [`tests/test_quantile.py`](tests/test_quantile.py) |
-| (11) | Capacity chance constraint $\Pr[\sum_{c}V^c\ge\omega]\ge 1-\varepsilon$ | [`scgraph/scenarios/uc2_logistics.py`](scgraph/scenarios/uc2_logistics.py) `provisioning_cpd` | UC2 (Fig. 6) |
-| (12) | Independent replication $1-\prod(1-P_{\mathrm{succ}})$ | [`scgraph/routing/replication.py:34`](scgraph/routing/replication.py#L34) `independent_success` | [`tests/test_replication.py`](tests/test_replication.py) |
-| (13) | Correlated replication $\mathbb{E}_z[\,\cdot\,]$ under a shared latent state | [`replication.py:18`](scgraph/routing/replication.py#L18) `joint_success`, via [`arrival.py:64`](scgraph/arrival.py#L64) `joint_route_set_deliveries`; latent model in [`graph.py:18`](scgraph/graph.py#L18) | UC3 (Fig. 7) |
-| (14) | Bernoulli projection $q_c[k]$ | [`scgraph/routing/bernoulli.py:54`](scgraph/routing/bernoulli.py#L54) `slot_usability` | ablation (Fig. 3), [`tests/test_bernoulli.py`](tests/test_bernoulli.py) |
+| (11) | One-sided Clopper-Pearson lower bound $L_\delta(k,M)$ | [`scgraph/stats.py:28`](scgraph/stats.py#L28) `cp_lower` | [`tests/test_revision_core.py`](tests/test_revision_core.py) |
+| (12) | Admission: $L_{\delta/\lvert\Pi\rvert}(k_\pi,M)\ge 1-\varepsilon$ | `pick_route_chance(admission="lcb")` in [`quantile.py:162`](scgraph/routing/quantile.py#L162) | $\varepsilon$-sweep (Fig. 6), UC4 (Fig. 9), `run_r1_admission.py` |
+| (13) | Draws needed to admit at zero failures | [`scgraph/stats.py:59`](scgraph/stats.py#L59) `admission_draws`, [`:50`](scgraph/stats.py#L50) `zero_failure_n` | [`tests/test_revision_core.py`](tests/test_revision_core.py) |
+| (14) | Capacity chance constraint $\Pr[\sum_{c}V^c\ge\omega]\ge 1-\varepsilon$ | [`scgraph/scenarios/uc2_logistics.py:81`](scgraph/scenarios/uc2_logistics.py#L81) `provisioning_cpd` | UC2 (Fig. 7) |
+| (15) | Independent replication $1-\prod(1-P_{\mathrm{succ}})$ | [`scgraph/routing/replication.py:34`](scgraph/routing/replication.py#L34) `independent_success` | [`tests/test_replication.py`](tests/test_replication.py) |
+| (16) | Correlated replication $\mathbb{E}_z[\,\cdot\,]$ under a shared latent state | [`replication.py:18`](scgraph/routing/replication.py#L18) `joint_success`, via [`arrival.py:77`](scgraph/arrival.py#L77) `joint_route_set_deliveries`; latent model in [`graph.py:18`](scgraph/graph.py#L18) | UC3 (Fig. 8) |
+| (17) | Bernoulli projection $q_c[k]$ | [`scgraph/routing/bernoulli.py:59`](scgraph/routing/bernoulli.py#L59) `slot_usability` | ablation (Fig. 4), [`tests/test_bernoulli.py`](tests/test_bernoulli.py) |
 
 ### Figures
 
 | Fig. | Paper | Produced by | Data | Image |
 |---|---|---|---|---|
 | 1 | The stochastic contact and its two corners | TikZ in `main.tex` (schematic, no code) | n/a | n/a |
-| 2 | Populating the graph (pipeline) | TikZ in `main.tex` (schematic) | n/a | see [`docs/PIPELINE.md`](docs/PIPELINE.md) |
-| 3 | Bernoulli corner vs slot width $\Delta$ | [`experiments/run_ablation.py`](experiments/run_ablation.py) | `results/ablation_slots.csv` | `figures/subsumption.pdf` |
-| 4 | UC1 / H1: violation + latency vs jitter $\sigma$ | [`experiments/run_uc1.py`](experiments/run_uc1.py) | `results/uc1.csv` | `figures/uc1_h1.pdf` |
-| 5 | The $\varepsilon$ knob | [`experiments/run_eps.py`](experiments/run_eps.py) | `results/eps.csv` | `figures/eps.pdf` |
-| 6 | UC2 / H2: provisioned overhead vs fade | [`experiments/run_uc2.py`](experiments/run_uc2.py) | `results/uc2.csv` | `figures/uc2_h2.pdf` |
-| 7 | UC3 / H3: delivery ratio vs collapse $\rho$ | [`experiments/run_uc3.py`](experiments/run_uc3.py) | `results/uc3.csv` | `figures/uc3_h3.pdf` |
-| 8 | Placement probe | [`experiments/run_placement.py`](experiments/run_placement.py) | `results/placement_uc1.csv`, `results/placement_uc3.csv` | `figures/placement.pdf` |
-| 9 | Route-selection runtime vs plan size | [`experiments/run_runtime.py`](experiments/run_runtime.py) | `results/runtime.csv` | `figures/runtime.pdf` |
-| n/a | §V-F's MC-vs-convolution crossover (no paper figure) | [`experiments/run_mc_scaling.py`](experiments/run_mc_scaling.py) | `results/mc_scaling.csv` | `figures/mc_scaling.pdf` |
+| 2 | One contact drawn from its joint law and from its independent twin | [`experiments/plot_joint_law.py`](experiments/plot_joint_law.py) (`make run-joint_law`) | `results/joint_law.csv` | `figures/joint_law.pdf` |
+| 3 | The four use cases | TikZ in `main.tex` (schematic) | n/a | n/a |
+| 4 | Bernoulli corner vs slot width $\Delta$ | [`experiments/run_ablation.py`](experiments/run_ablation.py) | `results/ablation_slots.csv` | `figures/subsumption.pdf` |
+| 5 | UC1 / H1: violation + latency vs jitter $\sigma$ | [`experiments/run_uc1.py`](experiments/run_uc1.py) | `results/uc1.csv` | `figures/uc1_h1.pdf` |
+| 6 | The $\varepsilon$ knob | [`experiments/run_eps.py`](experiments/run_eps.py) | `results/eps.csv` | `figures/eps.pdf` |
+| 7 | UC2 / H2: provisioned overhead vs fade | [`experiments/run_uc2.py`](experiments/run_uc2.py) | `results/uc2.csv` | `figures/uc2_h2.pdf` |
+| 8 | UC3 / H3: delivery ratio vs collapse $\rho$ | [`experiments/run_uc3.py`](experiments/run_uc3.py) | `results/uc3.csv` | `figures/uc3_h3.pdf` |
+| 9 | UC4, the multi-hop continuum: violation vs jitter and margin, with repair | [`experiments/run_uc4.py`](experiments/run_uc4.py) | `results/uc4_sigma.csv`, `results/uc4_margin.csv` | `figures/uc4.pdf` |
+| 10 | Contingent routing (BRUF, RUCoP) under correlated failures | [`experiments/run_rucop.py`](experiments/run_rucop.py) | `results/rucop_uc3.csv` | `figures/rucop_paper.pdf` |
+| 11 | Route-selection runtime vs plan size | [`experiments/run_overhead.py`](experiments/run_overhead.py) (`make run-overhead`, idle machine) | `results/overhead_compute.csv` | `figures/overhead_compute.pdf` |
 
 Figures land in `figures/` and are copied into the paper's `img/` by hand.
+`make reproduce` covers Figs. 4-8, `make reproduce-revision` Figs. 2 and 9-11.
 
 ### Hypotheses
 
 | | Claim | Scenario | Experiment | Headline in the paper |
 |---|---|---|---|---|
-| H1 | Distributional $T_s,T_e$ + max-$\Pr[\text{deliver by }D]$ routing lowers the SLA-violation rate vs a deterministic plan, and the gap widens with jitter | [`scenarios/uc1_event.py`](scgraph/scenarios/uc1_event.py) `make_instance_cpd` | `run_uc1.py` | at $\sigma{=}60$ s: det 0.2856 → SLA-aware 0.0; latency 69 → 549 s; Bernoulli corner at $\Delta{=}30$ s 0.0277 |
-| H2 | Chance-constrained capacity sizing meets the SLA at lower provisioned redundancy than worst-case | [`scenarios/uc2_logistics.py`](scgraph/scenarios/uc2_logistics.py) `provisioning_cpd` | `run_uc2.py` | mean-case SLA 0.63–1.00 (violates); worst-case overhead 1.20 → 5.02; chance-constrained 1.20 → 1.99 ($2.5\times$ saving) |
+| H1 | Distributional $T_s,T_e$ + max-$\Pr[\text{deliver by }D]$ routing lowers the SLA-violation rate vs a deterministic plan, and the gap widens with jitter | [`scenarios/uc1_event.py`](scgraph/scenarios/uc1_event.py) `make_instance_cpd` | `run_uc1.py` | at $\sigma{=}60$ s, held out: deterministic 28.7% → SLA-aware 0 (below $5\times10^{-6}$ at 95% confidence); mean delivery time about 70 → 549 s; Bernoulli corner at $\Delta{=}30$ s 2.8% |
+| H2 | Chance-constrained capacity sizing meets the SLA at lower provisioned redundancy than worst-case | [`scenarios/uc2_logistics.py`](scgraph/scenarios/uc2_logistics.py) `provisioning_cpd` | `run_uc2.py` | worst-case overhead 1.20× → 5.02×; chance-constrained 1.20× → 1.99× ($2.5\times$ less reserved capacity) |
 | H3 | Replication budgeted by existence *and correlation* beats a stale plan and correlation-blind flooding at equal overhead | [`scenarios/uc3_emergency.py`](scgraph/scenarios/uc3_emergency.py) | `run_uc3.py` | at $\rho{=}0.5$: stale 0.41, naive 0.49, Bernoulli 0.59, SCG 0.65, epidemic 0.76 |
+| UC4 | All facets at once on routes of five to fifteen hops | `scenarios/uc4_cpd` (60 satellites with ISLs) | `run_uc4.py` | CGR's violation 37% → 8% |
 
-Three cross-cutting studies accompany them. The subsumption ablation (§VII-B)
-traces the path between the two corners: at $\sigma{=}60$ s it sits near zero on
-fine grids and rises to 0.137 at $\Delta{=}90$ s, against deterministic 0.275.
-The $\varepsilon$-sweep (§VII-D) finds achieved violation at or below budget at
-every $\varepsilon$, with latency falling from 520 s to 82 s. The placement
-probe (§VII-F) gives 0.49 / 0.67 / 0.71 for UC3 at $\rho{=}0.4$, a factor of
-1.45, and the UC1 ordering inverts once the deadline margin reaches zero. The
-runtime study (§VII-H) spans 98 to 14 640 contacts, with per-route scoring flat
-at about 0.75 ms while candidate generation grows from 31 ms to 1.39 s.
+Cross-cutting studies accompany them. The subsumption ablation (§VII-C)
+traces the path between the two corners: at $\sigma{=}60$ s the Bernoulli
+corner's loss grows with the slot width, against the deterministic router's
+27.5%, and at $\sigma{=}30$ s the same climb runs from zero to 2.6% against
+5.2%. The $\varepsilon$-sweep (§VII-E) takes mean latency from 520 s at
+$\varepsilon\le0.05$ to 82 s at $\varepsilon=0.20$. The placement probe (§VII-M)
+gives 0.49 / 0.67 / 0.71 for UC3 at $\rho{=}0.4$, a factor of 1.45. The cost
+study (§VII-N) spans 98 to 14 640 contacts: route selection takes 1.3 s on the
+largest plan, 3.4 times the route table SABR builds anyway, and scoring a route
+costs 0.75 ms at 2000 draws.
 
 ### Model assumptions
 
@@ -360,8 +380,8 @@ GitLab and Zenodo all read.
 
 ```bibtex
 @article{fraire2026scgraph,
-  author  = {Fraire, Juan A. and Gu{\'e}rin Lassous, Isabelle and
-             Begin, Thomas and Lavinal, Emmanuel},
+  author  = {Fraire, Juan A. and Begin, Thomas and Lavinal, Emmanuel and
+             Gu{\'e}rin Lassous, Isabelle},
   title   = {Stochastic Contact Graphs: Rethinking the Contact Plan for the
              {6G} Space-Air-Ground Continuum},
   journal = {IEEE Open Journal of the Communications Society},
@@ -371,18 +391,20 @@ GitLab and Zenodo all read.
 }
 
 @software{scgraph,
-  author  = {Fraire, Juan A. and Gu{\'e}rin Lassous, Isabelle and
-             Begin, Thomas and Lavinal, Emmanuel},
+  author  = {Fraire, Juan A. and Begin, Thomas and Lavinal, Emmanuel and
+             Gu{\'e}rin Lassous, Isabelle},
   title   = {scgraph: stochastic contact graphs and {SLA}-aware {DTN} routing
              under uncertainty},
   year    = {2026},
-  version = {0.1.0},
+  version = {1.0.0},
   url     = {https://gitlab.inria.fr/jfraire/scgraph}
 }
 ```
 
-Volume, pages and DOIs are placeholders until the paper is published. See
-[`docs/ARCHIVAL.md`](docs/ARCHIVAL.md) for the release and DOI plan.
+The paper was accepted on 9 November 2026; its volume, pages and DOI are
+placeholders until it is published. The software DOI is minted by Zenodo for
+each release. See [`docs/ARCHIVAL.md`](docs/ARCHIVAL.md) for the release and
+DOI plan.
 
 ## Licence
 

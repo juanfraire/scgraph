@@ -1,6 +1,6 @@
 [project]
 name = "scgraph"
-version = "0.1.0"
+version = "1.0.0"
 description = "Stochastic contact graphs: SLA-aware DTN routing under uncertainty (DONUTS / OJ-COMS paper companion)"
 requires-python = ">=3.11"
 dependencies = [
