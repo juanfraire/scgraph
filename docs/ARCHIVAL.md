@@ -74,10 +74,11 @@ Fill in as they are issued.
 
 ```
 A-SABR pin       : 1277e360f2d61a593c336c6f6eb2e583758d7580  (2026-06-30, fixed)
-Submission tag   : v0.1.0-submission   commit ________
+Submission tag   : none (the submission and both revisions cited the repository URL)
+Release v1.0.0   : commit 3b7c202, 2026-11-10, GitHub mirror github.com/juanfraire/scgraph
 SWHID            : swh:1:rev:__________________________________
-Zenodo concept   : 10.5281/zenodo.__________   (cite this one)
-Zenodo v1.0.0    : 10.5281/zenodo.__________
+Zenodo concept   : 10.5281/zenodo.24120911   (cite this one; the paper's footnote does)
+Zenodo v1.0.0    : 10.5281/zenodo.24120912
 Paper DOI        : 10.1109/OJCOMS.2026.__________
 ```
 

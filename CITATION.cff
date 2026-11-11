@@ -31,6 +31,10 @@ version: "1.0.0"
 date-released: "2026-11-09"
 license: MIT
 repository-code: "https://gitlab.inria.fr/jfraire/scgraph"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24120911
+    description: Zenodo concept DOI (all versions)
 keywords:
   - delay-tolerant networking
   - contact plan

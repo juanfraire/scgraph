@@ -397,13 +397,14 @@ GitLab and Zenodo all read.
              under uncertainty},
   year    = {2026},
   version = {1.0.0},
-  url     = {https://gitlab.inria.fr/jfraire/scgraph}
+  url     = {https://gitlab.inria.fr/jfraire/scgraph},
+  doi     = {10.5281/zenodo.24120911}
 }
 ```
 
 The paper was accepted on 9 November 2026; its volume, pages and DOI are
-placeholders until it is published. The software DOI is minted by Zenodo for
-each release. See [`docs/ARCHIVAL.md`](docs/ARCHIVAL.md) for the release and
+placeholders until it is published. The software DOI above is Zenodo's
+concept DOI, which always resolves to the latest release. See [`docs/ARCHIVAL.md`](docs/ARCHIVAL.md) for the release and
 DOI plan.
 
 ## Licence
